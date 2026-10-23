@@ -9,7 +9,7 @@ Maintenance requests from fault to verified repair (TeSA Cohort 6 capstone, Team
 - Service: `cd service && ./mvnw verify` (healthy: `BUILD SUCCESS`, `Failures: 0, Errors: 0`; needs Docker)
 - Run: `cd service && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local,demo`
 - Contract lint: `npx @redocly/cli lint contract/openapi.yaml`
-- Mock: `npx @stoplight/prism-cli mock contract/openapi.yaml` (DM8)
+- Mock: `npx @stoplight/prism-cli@5 mock contract/openapi.yaml --port 4711` (DM8; serves paths at the root)
 - Web: `cd web && npm ci && npm run lint && npm run typecheck && npm test -- --run && npm run build`
 
 ## Conventions

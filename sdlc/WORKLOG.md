@@ -27,6 +27,7 @@ Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue 
 | EXECUTION.md | written (runbook) | Nnaemeka Chukwuma | 2026-10-23 |
 
 ## Conventions and guidelines
+- **Local mock port:** use **4711** for Genie's Prism mock (`--port 4711`). Prism's default 4010 is inside a Windows reserved range on Nnaemeka's machine, and Stockwise's mock uses 4710. Prism serves paths at the root (no `/api/v1`) and returns 422 for invalid requests (the real service returns 400).
 - **Decisions:** `../decisions.md` (Genie's own). Every entry records "Decided by" and "Logged by" (Nnaemeka Chukwuma) separately. Ask the user who to record as the decision maker for each new decision.
 - **Stack, auth, hosting, review and test rules:** reused from Stockwise as Genie's own decisions (DM5). Genie gets its own Neon project and Render service.
 - **Interface state:** TanStack Query only (DM7).
@@ -62,3 +63,4 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-23 · agent · Recorded DM8-DM9. Wrote `sdlc/plan.md`, `sdlc/test-plan.md`, `sdlc/EXECUTION.md`, `../AGENTS.md` and `../deploy-plan.md` (adapted from the Stockwise one).
 - 2026-10-23 · Nnaemeka Chukwuma · Accepted plan.md and test-plan.md for Victor Oyeleke. Agent updated the EXECUTION.md artifact chain. Genie short-path chain complete.
 - 2026-10-23 · agent · EXECUTION step 1 (local part): `git init -b main` in `genie/`, added `.gitignore`, committed the artifacts one commit per stage (first commit 2f519d5). No remote, nothing pushed (user: "local only for now").
+- 2026-10-23 · agent · Noted the mock port convention (4711) learned from Stockwise's contract smoke test.
