@@ -10,7 +10,7 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 - **Step:** intent.md, plan.md and test-plan.md accepted; EXECUTION.md is the runbook.
 - **In progress:** nothing.
 - **Next action:** Follow `EXECUTION.md` "Steps" from step 1 (Genie repo and protections, owner Blessing Nwafor). Log each completed step here. Stockwise takes priority (DM9). Urgent: Isaac Bassey decides today whether to warn Goodnews about both MVPs.
-- **Waiting on:** nothing (team to start implementation)
+- **Waiting on:** GitHub repository creation. The local git repo exists (`main`, one commit per stage); there is no remote yet. The user chose "local only for now" because the GitHub CLI isn't installed. To finish EXECUTION step 1: create the public repo on github.com, `git remote add origin <url>`, push `main` (with the user's go-ahead), then set branch protection, CODEOWNERS and the `production` environment.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -61,3 +61,4 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-23 · Nnaemeka Chukwuma · Accepted intent.md for Victor Oyeleke.
 - 2026-10-23 · agent · Recorded DM8-DM9. Wrote `sdlc/plan.md`, `sdlc/test-plan.md`, `sdlc/EXECUTION.md`, `../AGENTS.md` and `../deploy-plan.md` (adapted from the Stockwise one).
 - 2026-10-23 · Nnaemeka Chukwuma · Accepted plan.md and test-plan.md for Victor Oyeleke. Agent updated the EXECUTION.md artifact chain. Genie short-path chain complete.
+- 2026-10-23 · agent · EXECUTION step 1 (local part): `git init -b main` in `genie/`, added `.gitignore`, committed the artifacts one commit per stage (first commit 2f519d5). No remote, nothing pushed (user: "local only for now").
