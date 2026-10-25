@@ -27,4 +27,4 @@ This file is Genie's own decisions file (separate repository, DM-G2). It has thr
 ## 3. Contract change log
 | Date | Change | Why | Agreed by (two engineers) |
 |------|--------|-----|---------------------------|
-| | | | |
+| 2026-10-25 | Initial contract 0.1.0: MVP paths for auth, users, requests, assignment, estimates, transitions, override-review, history and health | EXECUTION.md step 2; Monday MVP | Isaac Bassey (API and access owner), Nnaemeka Chukwuma (Data and rules owner) |
