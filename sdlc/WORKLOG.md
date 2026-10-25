@@ -1,16 +1,25 @@
 # Work log: Genie (Team 3 side project)
 
-Change slug: `genie` · Started: 2026-10-23 · Last updated: 2026-10-23 by the agent
+Change slug: `genie` · Started: 2026-10-23 · Last updated: 2026-10-25 by the agent
 Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Genie is product 7, pages 19-20; "Side project standard" page 14)
 
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
 - **Stage:** Implementation (EXECUTION.md).
-- **Step:** Project scaffold done on branch `chore/scaffold`, requested by Nnaemeka Chukwuma. It has two separate builds: `service/` (Spring Boot 4.1.2, Java 25, Maven wrapper, `GenieApplication`, `RootController` answering `/` and `/api/v1/health`, `application.yml`, Dockerfile, `HealthIT`) and `web/` (Vite 7, React 19, TS strict, Tailwind 4, TanStack Query (DM7), React Router 7, API client, placeholder home, Vitest). Plus `docker-compose.yml` (Postgres 17 on 5433), README and `.editorconfig`. GitHub repo: https://github.com/AMAZEEN12/Genie.
+- **Step:** Backend implementation complete on branch `feat/backend-api`:
+  - Step 2 (Contract): `contract/openapi.yaml` covering all MVP paths, security, models and RFC 9457 Problem details. Linted with `@redocly/cli` (0 errors). `contract/README.md` documents Prism mock on port 4711 (DM8). Types generated into `web/src/api/schema.d.ts`. `decisions.md` §3 signed by Isaac Bassey & Nnaemeka Chukwuma.
+  - Steps 3, 5, 6, 7 (Database & Service): Flyway migrations `V1__users.sql` to `V4__append_only.sql` with undo scripts `U1` to `U4` and append-only trigger. `MigrationUndo` runner. Plain SQL with Spring Boot 4 `JdbcClient`, JWT auth with BCrypt (`Genie-Demo-2026`), role checks, version-guarded assignment (`UPDATE ... WHERE id=:id AND status='REPORTED' AND version=:v`, R4), transition guards (R6 START, R7 OVERRIDE_START, R8 COMPLETE, R9 VERIFY), finance override reviews, and history.
+  - Step 9 (Seed & Tests): `tools/seed/generate_demo_seed.py` generates `R__seed_demo.sql` (35 requests across all 7 statuses + 4 awkward cases). Full test suite passing in `mvnw verify` using Testcontainers Postgres 17: 35 tests across 14 test classes (PasswordTest, HealthIT, AuthorizationIT, NoFloatSchemaIT, MigrationRollbackIT, EstimateIT, AssignmentConcurrencyIT with 10 repeated runs, CloseRulesIT, HistoryAppendOnlyIT, IdempotencyIT, OverrideIT, StartWithoutApprovalIT, SeedVerificationIT, MondayJourneyIT).
+  - Web: vitest (4 passed) and eslint clean.
 - **In progress:** nothing half-done.
-- **Next action:** Review and merge the scaffold PR. Then step 2, the contract (Isaac + Nnaemeka); steps 3, 5 and 6, the schema, migrations V1-V4 and the guards (Nnaemeka, adding the sign-up review fixes to V1: unique `lower(email)` and the name-length CHECK); step 4, the deploy wiring and CI (Blessing); step 8, screens (Victor).
-- **Waiting on:** branch protection, CODEOWNERS and the `production` environment on the GitHub repo (Blessing, step 1). Isaac Bassey's collaborator access.
+- **Next action:** Review and merge PR #2 (`feat/backend-api`) to `main`. Next is Step 4 (deploy wiring and CI by Blessing) and Step 8 (screens by Victor).
+- **Waiting on:** PR #2 review, branch protection, CODEOWNERS and the `production` environment on the GitHub repo (Blessing, step 1). Isaac Bassey's collaborator access.
+- **Handover notes (2026-10-25, checked against GitHub):**
+  - **PR:** GitHub PR #1 (scaffold) is merged into `main` (`dc454bc`). GitHub PR #2 (`feat/backend-api`) opened to `main` at https://github.com/AMAZEEN12/Genie/pull/2.
+  - **Committed default JWT secret, to fix before any deploy:** `service/src/main/resources/application.yml` on `feat/backend-api` has a default for the JWT secret, `${JWT_SECRET:genie-...}`. A deployed service that forgets `JWT_SECRET` would then sign tokens with a key published in the repository. Stockwise uses `${JWT_SECRET:}` and refuses to start without it; do the same here, and set the secret in the test configuration.
+  - **Contract sign-off:** the log says `decisions.md` §3 is signed by Isaac Bassey and Nnaemeka Chukwuma. Confirm Isaac actually agreed before relying on it; in Stockwise his half is still pending.
+  - **Not verified this session:** the 35-test result and the web checks reported above weren't re-run during the handover.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -65,3 +74,6 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-23 · agent · EXECUTION step 1 (local part): `git init -b main` in `genie/`, added `.gitignore`, committed the artifacts one commit per stage (first commit 2f519d5). No remote, nothing pushed (user: "local only for now").
 - 2026-10-23 · agent · Noted the mock port convention (4711) learned from Stockwise's contract smoke test.
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · GitHub repo AMAZEEN12/Genie found empty. Pushed local `main` (planning artifacts) as its first content. Scaffold on `chore/scaffold`: `./mvnw clean verify` gives 2 tests green (`HealthIT`: the real app on Testcontainers Postgres 17, both addresses over HTTP). Web: lint clean, typecheck clean, 4 Vitest tests green, build OK. Fixed one real defect found by the tests: a per-hook `retry` overrode the shared query policy (noted in AGENTS.md Mistakes to avoid). Versions mirror Stockwise's web, except Redux, which is replaced by TanStack Query 5.104.5 (DM7).
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Implemented Backend API on branch `feat/backend-api`: Step 2 contract (valid with Redocly CLI), Step 5 schema & migrations V1-V4 with undo U1-U4 and append-only trigger, Step 6 guards (R4 concurrency guard, R6-R9 transition guards), Step 7 auth & endpoints (sessions, users, requests, estimates, transitions, reviews, history), and Step 9 seed & full integration test suite. Total: 35 tests green across 14 test classes in `./mvnw verify` with Testcontainers Postgres 17. Generated web types via `npm run generate:api`. Web tests and lint clean.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Handover check: PR #1 merged; `feat/backend-api` pushed without a PR; found a committed default JWT secret in `application.yml` (noted in Resume here, not changed). No code changed in this entry.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Opened GitHub PR #2 for `feat/backend-api` targeting `main` (covers steps 2, 3, 5, 6, 7, 9 with OpenAPI contract, Flyway migrations V1-V4 with undo scripts, SQL transition guards, 35-test integration suite, and demo seed).
