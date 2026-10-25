@@ -6,6 +6,35 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
+<<<<<<< HEAD
+- **Stage:** Implementation & Deployment (EXECUTION.md).
+- **Division of Work:**
+  - Frontend (`web/` screens, Step 8): Owned and handled by Victor Oyeleke.
+  - Backend & Deployment (Steps 1, 4, 10): Handled by Nnaemeka Chukwuma / agent.
+- **Backend Status:** Complete on branch `feat/backend-api` with PR #2 open at https://github.com/AMAZEEN12/Genie/pull/2.
+  - 39 tests green across 15 test classes (5 unit tests, 34 integration tests) passing on Testcontainers Postgres 17.
+  - Hardened JWT secret handling with fail-fast enforcement in production and unit test coverage (`TokenServiceTest`).
+  - Strict Jackson 3 money deserialization configured (`JacksonConfig`) enforcing integer kobo and rejecting float/string coercions (`NoFloatSchemaIT`).
+  - OpenAPI 3.1 contract lint clean.
+  - Flyway migrations V1-V4 and rollback undo scripts U1-U4.
+  - Demo seed dataset (35 requests across 7 statuses + 4 edge cases).
+- **In progress:** Failing-test evidence branch & CI/CD deployment workflows.
+- **Next backend & deployment actions:**
+<<<<<<< HEAD
+  1. Push hardened backend configuration & tests to `feat/backend-api` (PR #2) - **Completed**.
+  2. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`) and open PR #5 - **Completed**.
+  3. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails without the version guard, and open PR #6 - **Completed**.
+  4. Update `README.md` with demo credentials, free-tier audit table (deploy-plan §1), and deployment instructions (R14) and open PR #7 - **In Progress**.
+  5. Coordinate Neon & Render production secrets and deployment hook.
+- **Waiting on:** PR merges to `main`, GitHub repository environment/secrets configuration, and Victor's frontend completion.
+=======
+  1. Push hardened backend configuration & tests to `feat/backend-api` (PR #2) - **Done**.
+  2. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`) and open PR #3 - **In Progress**.
+  3. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails when the version check is removed.
+  4. Coordinate Neon & Render production secrets and deployment hook.
+  5. Update `README.md` with demo credentials, free-tier audit table, and deployment instructions (R14) and open PR #4.
+- **Waiting on:** PR #2 merge to `main`, GitHub repository environment/secrets configuration, and Victor's frontend completion.
+=======
 - **Stage:** Implementation (EXECUTION.md).
 - **Step:** Backend implementation merged to `main` in PR #2 (`11ccdad`):
   - Step 2 (Contract): `contract/openapi.yaml` covering all MVP paths, security, models and RFC 9457 Problem details. Linted with `@redocly/cli` (0 errors). `contract/README.md` documents Prism mock on port 4711 (DM8). Types generated into `web/src/api/schema.d.ts`. `decisions.md` §3 signed by Isaac Bassey & Nnaemeka Chukwuma.
@@ -20,6 +49,8 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - **Committed default JWT secret, to fix before any deploy:** `service/src/main/resources/application.yml` on `feat/backend-api` has a default for the JWT secret, `${JWT_SECRET:genie-...}`. A deployed service that forgets `JWT_SECRET` would then sign tokens with a key published in the repository. Stockwise uses `${JWT_SECRET:}` and refuses to start without it; do the same here, and set the secret in the test configuration.
   - **Contract sign-off:** the log says `decisions.md` §3 is signed by Isaac Bassey and Nnaemeka Chukwuma. Confirm Isaac actually agreed before relying on it; in Stockwise his half is still pending.
   - **Not verified this session:** the 35-test result and the web checks reported above weren't re-run during the handover.
+>>>>>>> origin/main
+>>>>>>> feat/ci-cd-workflows
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -81,3 +112,9 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · Handover check: PR #1 merged; `feat/backend-api` pushed without a PR; found a committed default JWT secret in `application.yml` (noted in Resume here, not changed). No code changed in this entry.
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · Opened GitHub PR #2 for `feat/backend-api` targeting `main` (covers steps 2, 3, 5, 6, 7, 9 with OpenAPI contract, Flyway migrations V1-V4 with undo scripts, SQL transition guards, 35-test integration suite, and demo seed).
 - 2026-10-25 · Codex for Victor Oyeleke · Merged updated `origin/main` (`11ccdad`, PR #2) into `refactor/frontend-structure`, preserving backend and interface worklog entries. Regenerated `web/src/api/schema.d.ts` from `contract/openapi.yaml`; regeneration produced no diff. Redocly contract lint passed.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Resumed via `/sdlc continue working on genie`. Assessed artifact chain and open steps.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · User confirmed frontend is assigned to Victor; scoped ongoing agent focus to backend completion and deployment workflows. Prepared task roadmap.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Hardened backend security and deserialization: removed default JWT secret fallback from `application.yml`, enforced fail-fast key validation in `TokenService.java` with 4 unit tests in `TokenServiceTest.java`, and configured Jackson 3 in `JacksonConfig.java` to disable float-as-int and string-to-number coercions for money fields (`NoFloatSchemaIT`). Full test suite verified green (39 tests across 15 test classes in `./mvnw verify`). Pushed to `feat/backend-api` (PR #2).
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Configured CI/CD workflows and repository automation on `feat/ci-cd-workflows`: `.github/workflows/ci.yml` (frozen migration, undo script, contract log, test edits, gitleaks, redocly lint, service verify, web checks), `.github/workflows/concurrency-evidence.yml` (automated R4 concurrency guard verification), `.github/workflows/deploy.yml` (gated Neon direct Flyway migration, Vercel frontend deploy, Render backend deploy hook with SHA health verification), `.github/scripts/`, and `.github/CODEOWNERS`. Opened GitHub PR #5.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Prepared Step 10 negative concurrency evidence on branch `evidence/no-assignment-guard`. Removed the version and status checks from `RequestRepository.assignTechnician`, executed `./mvnw clean verify -Dit.test=AssignmentConcurrencyIT -Dtest=NoUnitTests`, and verified 10/10 test failures (`BUILD FAILURE`). Captured log `no-assignment-guard-FAILS.log`, pushed branch, and opened PR #6 (`[DO NOT MERGE] test(evidence): prove AssignmentConcurrencyIT fails without R4 guard`).
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Updated `README.md` on `feat/deploy-docs` with demo credentials table (5 role accounts, password `Genie-Demo-2026`), cloud provider free-tier terms audit table (deploy-plan §1, dated 2026-10-23), architectural guardrails (Neon pooled vs direct endpoints, Render limits), and concurrency evidence instructions (R14). Opened GitHub PR #7.

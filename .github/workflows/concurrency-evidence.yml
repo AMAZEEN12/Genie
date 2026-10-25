@@ -1,0 +1,68 @@
+# Manual. Proves the R4 assignment rule with its protection AND without it (spec R4, success measure S2).
+#   assignment_ref (default: main) -> AssignmentConcurrencyIT must PASS
+#   evidence/no-assignment-guard   -> AssignmentConcurrencyIT must FAIL
+# The workflow is green only when both happened. Both logs are uploaded as artifacts.
+name: Concurrency evidence
+on:
+  workflow_dispatch:
+    inputs:
+      assignment_ref:
+        description: Branch or SHA that has the guarded assignment transaction
+        default: main
+        required: true
+      evidence_ref:
+        description: Branch with the guard removed (never merged)
+        default: evidence/no-assignment-guard
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  with-guard:
+    name: With the guard (expect BUILD SUCCESS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.assignment_ref }}" }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 25, cache: maven }
+      - name: Run AssignmentConcurrencyIT
+        working-directory: service
+        run: |
+          chmod +x mvnw
+          set +e
+          ./mvnw -B clean verify -Dit.test=AssignmentConcurrencyIT -Dtest=NoUnitTests -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | tee ../with-guard-PASSES.log
+          code=${PIPESTATUS[0]}
+          echo "maven exit code: $code"
+          exit "$code"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: with-guard-PASSES, path: with-guard-PASSES.log }
+
+  without-guard:
+    name: Without the guard (expect BUILD FAILURE)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.evidence_ref }}" }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 25, cache: maven }
+      - name: Run AssignmentConcurrencyIT (a failure is the evidence)
+        working-directory: service
+        run: |
+          chmod +x mvnw
+          set +e
+          ./mvnw -B clean verify -Dit.test=AssignmentConcurrencyIT -Dtest=NoUnitTests -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | tee ../no-assignment-guard-FAILS.log
+          code=${PIPESTATUS[0]}
+          echo "maven exit code: $code"
+          if [ "$code" = 0 ]; then
+            echo "::error::The test PASSED without the guard, so it proves nothing. Check that the evidence branch really removes the guard."; exit 1
+          fi
+          if ! grep -q "BUILD FAILURE" ../no-assignment-guard-FAILS.log || ! grep -q "AssignmentConcurrencyIT" ../no-assignment-guard-FAILS.log; then
+            echo "::error::Maven failed, but not because AssignmentConcurrencyIT failed (compile or setup error?). Not valid evidence."; exit 1
+          fi
+          echo "Failed as expected: this is the evidence."
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: no-assignment-guard-FAILS, path: no-assignment-guard-FAILS.log }

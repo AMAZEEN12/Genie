@@ -32,6 +32,7 @@ class HealthIT {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("genie.security.jwt-secret", () -> "test-only-signing-key-0123456789-abcdefghijklmnop");
     }
 
     @LocalServerPort

@@ -1,0 +1,20 @@
+# Code ownership (test-plan.md, DM4)
+# Area owners:
+# Nnaemeka Chukwuma: Data and rules (request, estimate, db migrations)
+# Isaac Bassey: API and access (auth, contract)
+# Blessing Nwafor: Delivery and evidence (CI/CD, workflows)
+# Victor Oyeleke: Interface (web)
+
+* @AMAZEEN12
+service/src/main/resources/db/ @AMAZEEN12
+service/src/main/java/ng/tesa/genie/request/ @AMAZEEN12
+service/src/main/java/ng/tesa/genie/estimate/ @AMAZEEN12
+service/src/test/java/ng/tesa/genie/request/ @AMAZEEN12
+service/src/test/java/ng/tesa/genie/estimate/ @AMAZEEN12
+
+contract/ @AMAZEEN12
+service/src/main/java/ng/tesa/genie/auth/ @AMAZEEN12
+service/src/test/java/ng/tesa/genie/auth/ @AMAZEEN12
+
+.github/ @AMAZEEN12
+web/ @AMAZEEN12
