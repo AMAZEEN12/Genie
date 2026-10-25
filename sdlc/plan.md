@@ -2,7 +2,7 @@
 
 Derived from: [intent.md](intent.md) (accepted 2026-10-23; holds requirements R1-R14 on the short path) · Status: accepted
 Accepted by: 2026-10-23 for Victor Oyeleke (product owner), confirmed by Nnaemeka Chukwuma · Higher-risk sign-off: Isaac Bassey (team lead) for the assignment guard, the override rules and every migration
-Decisions in force: [decisions.md](../decisions.md) DM1-DM9 · Deployment: [deploy-plan.md](../deploy-plan.md)
+Decisions in force: [decisions.md](../decisions.md) DM1-DM10 · Deployment: [deploy-plan.md](../deploy-plan.md)
 Supporting skills: none
 
 All paths are relative to the **Genie repository root** (the local `genie/` folder). Java package root: `ng.tesa.genie`. Structure and conventions mirror Stockwise (DM5), so the team switches between repos without relearning.
@@ -55,7 +55,7 @@ Every successful guard inserts a `status_history` row in the same transaction.
 | `GET /requests/{id}/history` | any with access | R10 |
 | `GET /health`, `GET /` | public | as Stockwise |
 
-**Screens:** Login · Report a fault · My requests (employee) · Request list with filters · Request detail (actions shown by role and status, with history) · Assign (manager) · Estimate form (technician) · Approvals queue (finance: estimates and overrides) · Complete form (technician). Five states on the MVP journey; works at 360 px; keyboard operable.
+**Screens:** Login · Report a fault · My requests (employee) · Request list with filters · Request detail (actions shown by role and status, with history) · Assign (manager) · Estimate form (technician) · Approvals queue (finance: estimates and overrides) · Complete form (technician). Five states on the MVP journey; works at 360 px; keyboard operable. Route objects use React Router's `Component` property. Every product feature owns its pages, components and hooks under `web/src/features/<feature>`; layouts and generic pages stay outside features. There is no `web/src/routes` folder (DM10).
 
 ## Files that change
 All **new** (separate repository). The file layout mirrors the Stockwise plan.
@@ -72,7 +72,7 @@ All **new** (separate repository). The file layout mirrors the Stockwise plan.
 | `db/migration/V1__users.sql`, `V2__requests.sql`, `V3__estimates_history.sql`, `V4__append_only.sql`, plus `db/rollback/U1-U4` | R4-R10 |
 | `db/seed/R__seed_demo.sql` | R13 |
 | `src/test/**`: `AssignmentConcurrencyIT`, `StartWithoutApprovalIT`, `AuthorizationIT`, `EstimateIT` (self-approval, reject → Assigned), `OverrideIT`, `CloseRulesIT`, `IdempotencyIT`, `HistoryAppendOnlyIT`, `NoFloatSchemaIT`, `MigrationRollbackIT`, `SeedVerificationIT`, `ContractIT` | R1-R13 |
-| `web/**`: Vite app, generated types, TanStack Query (DM7), screens above, `e2e/genie-journey.spec.ts` | R11, R12 |
+| `web/**`: Vite app, generated types, TanStack Query (DM7), React Router Data Mode with `Component` route objects, feature-owned pages under `src/features`, shared layouts under `src/layouts`, generic pages under `src/pages`, screens above, `e2e/genie-journey.spec.ts` | R11, R12 |
 | `.github/workflows/ci.yml`, `deploy.yml`, `concurrency-evidence.yml`, `CODEOWNERS` | DM5, S2, S5 |
 
 ## Order of work (DM9; Stockwise always takes priority)
