@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { routes } from '../app/router';
+import { routes } from '../../app/router';
 
 function renderAt(path: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -21,7 +21,7 @@ function respondWith(status: number, body: unknown) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('Home', () => {
+describe('HomePage', () => {
   it('shows the service as up', async () => {
     respondWith(200, { status: 'UP', database: 'UP' });
     renderAt('/');

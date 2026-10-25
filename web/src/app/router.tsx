@@ -1,15 +1,16 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
-import { Layout } from '../routes/Layout';
-import { Home } from '../routes/Home';
-import { NotFound } from '../routes/NotFound';
+import { HomePage } from '../features/home/HomePage';
+import { AppLayout } from '../layouts/AppLayout';
+import { NotFoundPage } from '../pages/NotFoundPage';
 
-/** Screens from plan.md are added here: login, report a fault, my requests, request list and detail, approvals. */
+/** Feature pages from plan.md are registered here; route objects use React Router's Component API. */
 export const routes: RouteObject[] = [
   {
-    element: <Layout />,
+    path: '/',
+    Component: AppLayout,
     children: [
-      { index: true, element: <Home /> },
-      { path: '*', element: <NotFound /> },
+      { index: true, Component: HomePage },
+      { path: '*', Component: NotFoundPage },
     ],
   },
 ];
