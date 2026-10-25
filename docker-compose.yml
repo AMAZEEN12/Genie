@@ -1,0 +1,21 @@
+# Local development database (Postgres 17, as in the tests and on Neon).
+# Port 5433 on the host, so it doesn't clash with a locally installed Postgres on 5432.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: genie
+      POSTGRES_USER: genie
+      POSTGRES_PASSWORD: genie
+    ports:
+      - "5433:5432"
+    volumes:
+      - genie-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genie -d genie"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  genie-db:

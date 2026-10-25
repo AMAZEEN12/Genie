@@ -6,11 +6,11 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Done (short-path SDLC chain complete). Implementation not started.
-- **Step:** intent.md, plan.md and test-plan.md accepted; EXECUTION.md is the runbook.
-- **In progress:** nothing.
-- **Next action:** Follow `EXECUTION.md` "Steps" from step 1 (Genie repo and protections, owner Blessing Nwafor). Log each completed step here. Stockwise takes priority (DM9). Urgent: Isaac Bassey decides today whether to warn Goodnews about both MVPs.
-- **Waiting on:** GitHub repository creation. The local git repo exists (`main`, one commit per stage); there is no remote yet. The user chose "local only for now" because the GitHub CLI isn't installed. To finish EXECUTION step 1: create the public repo on github.com, `git remote add origin <url>`, push `main` (with the user's go-ahead), then set branch protection, CODEOWNERS and the `production` environment.
+- **Stage:** Implementation (EXECUTION.md).
+- **Step:** Project scaffold done on branch `chore/scaffold`, requested by Nnaemeka Chukwuma. It has two separate builds: `service/` (Spring Boot 4.1.2, Java 25, Maven wrapper, `GenieApplication`, `RootController` answering `/` and `/api/v1/health`, `application.yml`, Dockerfile, `HealthIT`) and `web/` (Vite 7, React 19, TS strict, Tailwind 4, TanStack Query (DM7), React Router 7, API client, placeholder home, Vitest). Plus `docker-compose.yml` (Postgres 17 on 5433), README and `.editorconfig`. GitHub repo: https://github.com/AMAZEEN12/Genie.
+- **In progress:** nothing half-done.
+- **Next action:** Review and merge the scaffold PR. Then step 2, the contract (Isaac + Nnaemeka); steps 3, 5 and 6, the schema, migrations V1-V4 and the guards (Nnaemeka, adding the sign-up review fixes to V1: unique `lower(email)` and the name-length CHECK); step 4, the deploy wiring and CI (Blessing); step 8, screens (Victor).
+- **Waiting on:** branch protection, CODEOWNERS and the `production` environment on the GitHub repo (Blessing, step 1). Isaac Bassey's collaborator access.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -64,3 +64,4 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-23 · Nnaemeka Chukwuma · Accepted plan.md and test-plan.md for Victor Oyeleke. Agent updated the EXECUTION.md artifact chain. Genie short-path chain complete.
 - 2026-10-23 · agent · EXECUTION step 1 (local part): `git init -b main` in `genie/`, added `.gitignore`, committed the artifacts one commit per stage (first commit 2f519d5). No remote, nothing pushed (user: "local only for now").
 - 2026-10-23 · agent · Noted the mock port convention (4711) learned from Stockwise's contract smoke test.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · GitHub repo AMAZEEN12/Genie found empty. Pushed local `main` (planning artifacts) as its first content. Scaffold on `chore/scaffold`: `./mvnw clean verify` gives 2 tests green (`HealthIT`: the real app on Testcontainers Postgres 17, both addresses over HTTP). Web: lint clean, typecheck clean, 4 Vitest tests green, build OK. Fixed one real defect found by the tests: a per-hook `retry` overrode the shared query policy (noted in AGENTS.md Mistakes to avoid). Versions mirror Stockwise's web, except Redux, which is replaced by TanStack Query 5.104.5 (DM7).
