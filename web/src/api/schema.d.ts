@@ -320,23 +320,46 @@ export interface components {
             decision: components["schemas"]["EstimateDecision"];
             reason?: string;
         };
-        TransitionRequest: {
-            /** @enum {string} */
-            type: "START" | "OVERRIDE_START" | "COMPLETE" | "VERIFY";
-            /** @description Required when type is OVERRIDE_START. */
-            reason?: string;
-            /** @description Required when type is COMPLETE. */
-            workDone?: string;
+        TransitionRequest: components["schemas"]["StartTransitionRequest"] | components["schemas"]["OverrideStartTransitionRequest"] | components["schemas"]["CompleteTransitionRequest"] | components["schemas"]["VerifyTransitionRequest"];
+        StartTransitionRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "StartTransitionRequest";
+        };
+        OverrideStartTransitionRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "OverrideStartTransitionRequest";
+            reason: string;
+        };
+        CompleteTransitionRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "CompleteTransitionRequest";
+            workDone: string;
             /**
              * Format: int64
-             * @description Required when type is COMPLETE. Actual cost in integer kobo.
+             * @description Actual cost in integer kobo.
              */
-            actualCostKobo?: number;
+            actualCostKobo: number;
             /**
              * Format: date
-             * @description Required when type is COMPLETE. Date format YYYY-MM-DD.
+             * @description Date format YYYY-MM-DD.
              */
-            completedOn?: string;
+            completedOn: string;
+        };
+        VerifyTransitionRequest: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "VerifyTransitionRequest";
         };
         OverrideReviewRequest: {
             review: components["schemas"]["OverrideReview"];
@@ -373,6 +396,7 @@ export interface components {
         RequestSummary: {
             /** Format: uuid */
             id: string;
+            /** @description Opaque, server-generated display reference. Clients must not parse its format. */
             reference: string;
             title: string;
             building: string;
@@ -393,6 +417,7 @@ export interface components {
         RequestDetail: {
             /** Format: uuid */
             id: string;
+            /** @description Opaque, server-generated display reference. Clients must not parse its format. */
             reference: string;
             title: string;
             description: string;
@@ -424,8 +449,8 @@ export interface components {
             /** Format: date-time */
             verifiedAt?: string;
             version: number;
-            estimates?: components["schemas"]["Estimate"][];
-            history?: components["schemas"]["StatusHistoryEntry"][];
+            estimates: components["schemas"]["Estimate"][];
+            history: components["schemas"]["StatusHistoryEntry"][];
         };
         Problem: {
             /**
@@ -743,6 +768,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -953,6 +979,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };

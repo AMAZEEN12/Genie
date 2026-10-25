@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Genie API
-  version: 0.1.0
+  version: 0.1.1
   summary: Maintenance requests from fault to verified repair (TeSA Cohort 6, Team 3 side project).
   description: |
-    Contract v0.1 covers the **Monday 26 Oct MVP paths only** (EXECUTION.md step 2).
+    Contract v0.1.1 covers the **Monday 26 Oct MVP paths only** (EXECUTION.md step 2).
     
     Status sequence:
     REPORTED -> ASSIGNED -> ESTIMATE_SUBMITTED -> ESTIMATE_APPROVED -> IN_PROGRESS -> COMPLETED -> VERIFIED_CLOSED
@@ -257,6 +257,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -471,6 +473,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -739,28 +743,65 @@ components:
           type: string
 
     TransitionRequest:
+      oneOf:
+        - $ref: '#/components/schemas/StartTransitionRequest'
+        - $ref: '#/components/schemas/OverrideStartTransitionRequest'
+        - $ref: '#/components/schemas/CompleteTransitionRequest'
+        - $ref: '#/components/schemas/VerifyTransitionRequest'
+      discriminator:
+        propertyName: type
+
+    StartTransitionRequest:
       type: object
+      additionalProperties: false
       required: [type]
       properties:
         type:
           type: string
-          enum: [START, OVERRIDE_START, COMPLETE, VERIFY]
+          const: START
+
+    OverrideStartTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [type, reason]
+      properties:
+        type:
+          type: string
+          const: OVERRIDE_START
         reason:
           type: string
-          description: Required when type is OVERRIDE_START.
+          minLength: 1
+
+    CompleteTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [type, workDone, actualCostKobo, completedOn]
+      properties:
+        type:
+          type: string
+          const: COMPLETE
         workDone:
           type: string
-          description: Required when type is COMPLETE.
+          minLength: 1
         actualCostKobo:
           type: integer
           format: int64
           minimum: 0
           x-unit: kobo
-          description: Required when type is COMPLETE. Actual cost in integer kobo.
+          description: Actual cost in integer kobo.
         completedOn:
           type: string
           format: date
-          description: Required when type is COMPLETE. Date format YYYY-MM-DD.
+          description: Date format YYYY-MM-DD.
+
+    VerifyTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: VERIFY
 
     OverrideReviewRequest:
       type: object
@@ -831,6 +872,7 @@ components:
           format: uuid
         reference:
           type: string
+          description: Opaque, server-generated display reference. Clients must not parse its format.
         title:
           type: string
         building:
@@ -862,13 +904,14 @@ components:
 
     RequestDetail:
       type: object
-      required: [id, reference, title, description, building, location, equipment, category, priority, status, reportedBy, reportedAt, override, version]
+      required: [id, reference, title, description, building, location, equipment, category, priority, status, reportedBy, reportedAt, override, version, estimates, history]
       properties:
         id:
           type: string
           format: uuid
         reference:
           type: string
+          description: Opaque, server-generated display reference. Clients must not parse its format.
         title:
           type: string
         description:

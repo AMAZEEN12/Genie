@@ -47,7 +47,7 @@ Every successful guard inserts a `status_history` row in the same transaction.
 | `GET /requests` | any (EMPLOYEE sees own) | `?status=&category=&priority=&technicianId=&override=` (R11) |
 | `POST /requests` | EMPLOYEE, MANAGER | `Idempotency-Key` required (R3) |
 | `GET /requests/{id}` | any with access | includes estimates and history |
-| `PUT /requests/{id}/assignment` | MANAGER | `If-Match: version`; idempotent; 409 `ALREADY_ASSIGNED` (R4) |
+| `PUT /requests/{id}/assignment` | MANAGER | Body includes `version`; conditional update returns 409 `ALREADY_ASSIGNED` when the request was already assigned (R4) |
 | `POST /requests/{id}/estimates` | assigned TECHNICIAN | kobo integer (R5) |
 | `PUT /estimates/{id}/decision` | FINANCE | `{decision, reason?}` (R5) |
 | `POST /requests/{id}/transitions` | per transition type | `{type: START\|OVERRIDE_START\|COMPLETE\|VERIFY, …}`. Each transition is a history-record resource (R6-R9) |
