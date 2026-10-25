@@ -1,0 +1,31 @@
+# Genie service configuration. Every secret comes from the environment (deploy-plan); none is committed.
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: genie
+  datasource:
+    # JDBC form, for example jdbc:postgresql://host/db?sslmode=require (Neon). Local default: docker compose.
+    url: ${DATABASE_JDBC_URL:jdbc:postgresql://localhost:5433/genie}
+    username: ${DATABASE_USERNAME:genie}
+    password: ${DATABASE_PASSWORD:genie}
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    # N1: money and counts are integers; never accept 1.5 for an integer field.
+    deserialization:
+      accept-float-as-int: false
+      fail-on-unknown-properties: true
+
+app:
+  timezone: Africa/Lagos
+
+---
+# Demo data (R13): adds the seed, once it exists, as a Flyway repeatable migration.
+spring:
+  config:
+    activate:
+      on-profile: demo
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
