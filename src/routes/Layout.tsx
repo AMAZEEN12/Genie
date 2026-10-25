@@ -1,20 +1,25 @@
-import { Link, Outlet } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
 
 export function Layout() {
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded focus:bg-white focus:px-3 focus:py-2">
+    <div className="min-h-screen bg-[#0D0D0D] text-white selection:bg-[#E1EE04] selection:text-[#0D0D0D]">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-[10px] focus:bg-[#E1EE04] focus:text-[#0D0D0D] focus:px-4 focus:py-2 focus:font-semibold"
+      >
         Skip to content
       </a>
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link to="/" className="text-lg font-semibold tracking-tight">Genie</Link>
-          <span className="text-sm text-slate-500">Maintenance requests</span>
-        </div>
-      </header>
-      <main id="main" className="mx-auto max-w-5xl px-4 py-8">
+
+      {isLandingPage ? (
         <Outlet />
-      </main>
+      ) : (
+        <main id="main" className="mx-auto max-w-5xl px-4 py-8">
+          <Outlet />
+        </main>
+      )}
     </div>
   );
 }
