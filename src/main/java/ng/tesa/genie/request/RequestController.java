@@ -80,7 +80,7 @@ public class RequestController {
     }
 
     @GetMapping
-    public List<MaintenanceRequest> listRequests(
+    public List<RequestSummaryResponse> listRequests(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String priority,
@@ -91,12 +91,14 @@ public class RequestController {
         if (user.role() == Role.EMPLOYEE) {
             reportedBy = user.id();
         }
-        return requests.search(status, category, priority, technicianId, override, reportedBy);
+        return requests.search(status, category, priority, technicianId, override, reportedBy).stream()
+                .map(RequestSummaryResponse::from)
+                .toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<MaintenanceRequest> createRequest(
+    public ResponseEntity<RequestDetailResponse> createRequest(
             @RequestHeader("Idempotency-Key") UUID idempotencyKey,
             @Valid @RequestBody CreateRequestDto body,
             @AuthenticationPrincipal CurrentUser user) {
@@ -104,36 +106,35 @@ public class RequestController {
                 body.title(), body.description(), body.building(), body.location(),
                 body.equipment(), body.category(), body.priority(), idempotencyKey, user
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(RequestDetailResponse.from(created));
     }
 
     @GetMapping("/{id}")
-    public MaintenanceRequest getRequest(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser user) {
+    public RequestDetailResponse getRequest(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser user) {
         MaintenanceRequest req = workflow.getRequestWithDetails(id);
-        if (user.role() == Role.EMPLOYEE && !req.reportedBy().id().equals(user.id())) {
-            throw new ForbiddenException(ErrorCode.FORBIDDEN, "Employees can only view their own reported requests.");
-        }
-        return req;
+        assertCanView(req, user);
+        return RequestDetailResponse.from(req);
     }
 
     @PutMapping("/{id}/assignment")
-    public MaintenanceRequest assignTechnician(
+    public RequestDetailResponse assignTechnician(
             @PathVariable UUID id,
             @Valid @RequestBody AssignRequestDto body,
             @AuthenticationPrincipal CurrentUser user) {
         if (user.role() != Role.MANAGER) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only managers can assign technicians.");
         }
-        return workflow.assignTechnician(id, body.technicianId(), body.deadline(), body.version(), user);
+        return RequestDetailResponse.from(
+                workflow.assignTechnician(id, body.technicianId(), body.deadline(), body.version(), user));
     }
 
     @PostMapping("/{id}/transitions")
-    public MaintenanceRequest applyTransition(
+    public RequestDetailResponse applyTransition(
             @PathVariable UUID id,
             @Valid @RequestBody TransitionDto body,
             @AuthenticationPrincipal CurrentUser user) {
         String type = body.type().trim().toUpperCase();
-        return switch (type) {
+        MaintenanceRequest request = switch (type) {
             case "START" -> {
                 if (user.role() != Role.TECHNICIAN) {
                     throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only technicians can start work.");
@@ -169,21 +170,34 @@ public class RequestController {
             }
             default -> throw new ConflictException(ErrorCode.VALIDATION_FAILED, "Unknown transition type: " + body.type());
         };
+        return RequestDetailResponse.from(request);
     }
 
     @PutMapping("/{id}/override-review")
-    public MaintenanceRequest reviewOverride(
+    public RequestDetailResponse reviewOverride(
             @PathVariable UUID id,
             @Valid @RequestBody OverrideReviewDto body,
             @AuthenticationPrincipal CurrentUser user) {
         if (user.role() != Role.FINANCE) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only finance can review overrides.");
         }
-        return workflow.reviewOverride(id, body.review(), body.note(), user);
+        return RequestDetailResponse.from(workflow.reviewOverride(id, body.review(), body.note(), user));
     }
 
     @GetMapping("/{id}/history")
-    public List<StatusHistoryEntry> getHistory(@PathVariable UUID id) {
+    public List<StatusHistoryEntry> getHistory(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CurrentUser user) {
+        MaintenanceRequest request = requests.findById(id)
+                .orElseThrow(() -> new NotFoundException("Maintenance request not found: " + id));
+        assertCanView(request, user);
         return history.findByRequestId(id);
+    }
+
+    private static void assertCanView(MaintenanceRequest request, CurrentUser user) {
+        if (user.role() == Role.EMPLOYEE && !request.reportedBy().id().equals(user.id())) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN,
+                    "Employees can only view their own reported requests.");
+        }
     }
 }
