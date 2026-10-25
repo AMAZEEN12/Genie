@@ -23,6 +23,28 @@ export class ApiError extends Error {
   }
 }
 
+export const TOKEN_STORAGE_KEY = 'genie_token';
+
+export function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredToken(token: string | null): void {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors (e.g. private browsing restrictions)
+  }
+}
+
 export const apiBaseUrl: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://127.0.0.1:4711';
 
 export interface RequestOptions {
@@ -37,7 +59,9 @@ export interface RequestOptions {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'X-Request-Id': crypto.randomUUID() };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
-  if (options.token) headers.Authorization = `Bearer ${options.token}`;
+
+  const token = options.token ?? getStoredToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
   if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
 
   let response: Response;
