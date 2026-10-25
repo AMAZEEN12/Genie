@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/test-setup.ts","./src/api/client.ts","./src/api/health.ts","./src/app/queryclient.ts","./src/app/router.tsx","./src/routes/home.test.tsx","./src/routes/home.tsx","./src/routes/layout.tsx","./src/routes/notfound.tsx","./vite.config.ts","./vitest.config.ts"],"version":"5.9.3"}
