@@ -1,0 +1,969 @@
+openapi: 3.1.0
+info:
+  title: Genie API
+  version: 0.1.0
+  summary: Maintenance requests from fault to verified repair (TeSA Cohort 6, Team 3 side project).
+  description: |
+    Contract v0.1 covers the **Monday 26 Oct MVP paths only** (EXECUTION.md step 2).
+    
+    Status sequence:
+    REPORTED -> ASSIGNED -> ESTIMATE_SUBMITTED -> ESTIMATE_APPROVED -> IN_PROGRESS -> COMPLETED -> VERIFIED_CLOSED
+    - Estimate rejection moves ESTIMATE_SUBMITTED -> ASSIGNED.
+    - Urgent override (DM6): priority=URGENT moves ASSIGNED or ESTIMATE_SUBMITTED -> IN_PROGRESS with override=true.
+    
+    Conventions:
+    - Every money field is an integer number of **kobo** (`x-unit: kobo`). Non-integer numbers are rejected with 400.
+    - Every error is `application/problem+json` (RFC 9457) with a machine-readable `code` and the `requestId`.
+    - Send `X-Request-Id` (UUID) on every request; the service echoes it (and generates one if absent).
+    - Recording writes (`POST /requests`) require an `Idempotency-Key` (UUID). Replaying the same key with the same body returns the original result; the same key with a different body returns 422.
+    - All timestamps are UTC (RFC 3339). "Today" filters use the Africa/Lagos day.
+    - All data is fictional demonstration data.
+  contact:
+    name: Team 3 (Isaac Bassey, API and access owner; Nnaemeka Chukwuma, Data and rules owner)
+servers:
+  - url: http://127.0.0.1:4711
+    description: Prism mock (`npx @stoplight/prism-cli mock contract/openapi.yaml --port 4711`)
+  - url: http://localhost:8080/api/v1
+    description: Local service
+security:
+  - bearerAuth: []
+tags:
+  - name: auth
+    description: Login and current user
+  - name: users
+    description: User directory for assignment
+  - name: requests
+    description: Maintenance fault requests and lifecycle transitions
+  - name: estimates
+    description: Repair estimates and finance decisions
+  - name: health
+    description: Liveness and database reachability
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      operationId: getHealth
+      summary: Liveness and database reachability
+      description: Safe. Idempotent. Public. Reports service and database status.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Service and database status
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /auth/sessions:
+    post:
+      tags: [auth]
+      operationId: createSession
+      summary: Log in with email and password
+      description: Neither safe nor idempotent. Public. Returns an 8-hour bearer token.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '201':
+          description: Authenticated session created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: Current authenticated user details
+      description: Safe. Idempotent. Any authenticated role.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Current user identity and role
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: List users filtered by role
+      description: Safe. Idempotent. MANAGER role (used for technician assignment picker).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: role
+          in: query
+          description: Filter users by role
+          required: false
+          schema:
+            $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: List of matching users
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /requests:
+    get:
+      tags: [requests]
+      operationId: listRequests
+      summary: Search and filter maintenance requests
+      description: Safe. Idempotent. Any authenticated role (EMPLOYEE sees only requests they reported; others see all).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/RequestStatus'
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: priority
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: technicianId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: override
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of matching maintenance requests
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [requests]
+      operationId: createRequest
+      summary: Report a new fault request
+      description: Idempotent via Idempotency-Key. EMPLOYEE or MANAGER role. Creates request in REPORTED status.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        '201':
+          description: Request recorded
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /requests/{id}:
+    get:
+      tags: [requests]
+      operationId: getRequest
+      summary: Get maintenance request details
+      description: Safe. Idempotent. Any authenticated role with access to the request.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      responses:
+        '200':
+          description: Request details with estimates and status history
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /requests/{id}/assignment:
+    put:
+      tags: [requests]
+      operationId: assignTechnician
+      summary: Assign a technician and deadline to a request
+      description: Idempotent. MANAGER role only. Conditional update guarded by version and status=REPORTED.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRequest'
+      responses:
+        '200':
+          description: Technician assigned
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /requests/{id}/estimates:
+    post:
+      tags: [estimates]
+      operationId: createEstimate
+      summary: Submit a cost estimate for repair
+      description: Neither safe nor idempotent. Assigned TECHNICIAN only. Moves status to ESTIMATE_SUBMITTED.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEstimateRequest'
+      responses:
+        '201':
+          description: Estimate submitted
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estimate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /estimates/{id}/decision:
+    put:
+      tags: [estimates]
+      operationId: decideEstimate
+      summary: Approve or reject an estimate
+      description: Idempotent. FINANCE role only. Self-approval is forbidden. Rejection moves request to ASSIGNED.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          description: Estimate UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateDecisionRequest'
+      responses:
+        '200':
+          description: Decision recorded
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estimate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /requests/{id}/transitions:
+    post:
+      tags: [requests]
+      operationId: applyTransition
+      summary: Execute a status transition (start work, urgent override, complete, verify)
+      description: Neither safe nor idempotent. Role depends on transition type. Appends to status_history.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRequest'
+      responses:
+        '200':
+          description: Transition applied
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /requests/{id}/override-review:
+    put:
+      tags: [requests]
+      operationId: reviewOverride
+      summary: Finance review of an urgent override
+      description: Idempotent. FINANCE role only. Reviews an urgent override (ACCEPTED or FLAGGED).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideReviewRequest'
+      responses:
+        '200':
+          description: Review recorded
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /requests/{id}/history:
+    get:
+      tags: [requests]
+      operationId: getRequestHistory
+      summary: Retrieve the append-only status change audit history
+      description: Safe. Idempotent. Any authenticated role with access to the request.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RequestIdParam'
+      responses:
+        '200':
+          description: List of status transitions
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusHistoryEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Optional client request UUID echoed back in the response.
+      schema:
+        type: string
+        format: uuid
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique UUID key preventing duplicate recording of operations.
+      schema:
+        type: string
+        format: uuid
+
+    RequestIdParam:
+      name: id
+      in: path
+      required: true
+      description: Maintenance request UUID
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    RequestId:
+      description: Request UUID echoed from request or generated by service.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request or input validation failure
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or invalid authentication token
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Forbidden:
+      description: Authenticated user does not have permission for this action
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Conflict:
+      description: Business rule violation or concurrency conflict
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    UnprocessableEntity:
+      description: Idempotency key reused with different payload
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    ServiceUnavailable:
+      description: Downstream database unreachable
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Role:
+      type: string
+      enum: [EMPLOYEE, MANAGER, TECHNICIAN, FINANCE]
+
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, URGENT]
+
+    RequestStatus:
+      type: string
+      enum:
+        - REPORTED
+        - ASSIGNED
+        - ESTIMATE_SUBMITTED
+        - ESTIMATE_APPROVED
+        - IN_PROGRESS
+        - COMPLETED
+        - VERIFIED_CLOSED
+
+    EstimateDecision:
+      type: string
+      enum: [APPROVED, REJECTED]
+
+    OverrideReview:
+      type: string
+      enum: [ACCEPTED, FLAGGED]
+
+    Health:
+      type: object
+      required: [service, status, database, checkedAt]
+      properties:
+        service:
+          type: string
+          example: genie
+        status:
+          type: string
+          example: UP
+        database:
+          type: string
+          example: UP
+        version:
+          type: string
+          example: 0.1.0-SNAPSHOT
+        checkedAt:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      required: [id, email, displayName, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          minLength: 2
+        role:
+          $ref: '#/components/schemas/Role'
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    Session:
+      type: object
+      required: [token, expiresAt, user]
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+
+    CreateRequest:
+      type: object
+      required: [title, description, building, location, equipment, category, priority]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+          minLength: 3
+        building:
+          type: string
+          minLength: 1
+          maxLength: 100
+        location:
+          type: string
+          minLength: 1
+          maxLength: 100
+        equipment:
+          type: string
+          minLength: 1
+          maxLength: 100
+        category:
+          type: string
+          minLength: 1
+          maxLength: 50
+        priority:
+          $ref: '#/components/schemas/Priority'
+
+    AssignRequest:
+      type: object
+      required: [technicianId, deadline, version]
+      properties:
+        technicianId:
+          type: string
+          format: uuid
+        deadline:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+
+    CreateEstimateRequest:
+      type: object
+      required: [amountKobo]
+      properties:
+        amountKobo:
+          type: integer
+          format: int64
+          minimum: 1
+          x-unit: kobo
+          description: Cost estimate in integer kobo.
+
+    EstimateDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/EstimateDecision'
+        reason:
+          type: string
+
+    TransitionRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [START, OVERRIDE_START, COMPLETE, VERIFY]
+        reason:
+          type: string
+          description: Required when type is OVERRIDE_START.
+        workDone:
+          type: string
+          description: Required when type is COMPLETE.
+        actualCostKobo:
+          type: integer
+          format: int64
+          minimum: 0
+          x-unit: kobo
+          description: Required when type is COMPLETE. Actual cost in integer kobo.
+        completedOn:
+          type: string
+          format: date
+          description: Required when type is COMPLETE. Date format YYYY-MM-DD.
+
+    OverrideReviewRequest:
+      type: object
+      required: [review]
+      properties:
+        review:
+          $ref: '#/components/schemas/OverrideReview'
+        note:
+          type: string
+
+    Estimate:
+      type: object
+      required: [id, requestId, amountKobo, submittedBy, submittedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        amountKobo:
+          type: integer
+          format: int64
+          x-unit: kobo
+        submittedBy:
+          $ref: '#/components/schemas/User'
+        submittedAt:
+          type: string
+          format: date-time
+        decision:
+          $ref: '#/components/schemas/EstimateDecision'
+        decisionReason:
+          type: string
+        decidedBy:
+          $ref: '#/components/schemas/User'
+        decidedAt:
+          type: string
+          format: date-time
+
+    StatusHistoryEntry:
+      type: object
+      required: [id, requestId, toStatus, actor, at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        fromStatus:
+          $ref: '#/components/schemas/RequestStatus'
+        toStatus:
+          $ref: '#/components/schemas/RequestStatus'
+        actor:
+          $ref: '#/components/schemas/User'
+        note:
+          type: string
+        at:
+          type: string
+          format: date-time
+
+    RequestSummary:
+      type: object
+      required: [id, reference, title, building, location, equipment, category, priority, status, reportedBy, reportedAt, override, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        title:
+          type: string
+        building:
+          type: string
+        location:
+          type: string
+        equipment:
+          type: string
+        category:
+          type: string
+        priority:
+          $ref: '#/components/schemas/Priority'
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        reportedBy:
+          $ref: '#/components/schemas/User'
+        reportedAt:
+          type: string
+          format: date-time
+        technician:
+          $ref: '#/components/schemas/User'
+        deadline:
+          type: string
+          format: date-time
+        override:
+          type: boolean
+        version:
+          type: integer
+
+    RequestDetail:
+      type: object
+      required: [id, reference, title, description, building, location, equipment, category, priority, status, reportedBy, reportedAt, override, version]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        building:
+          type: string
+        location:
+          type: string
+        equipment:
+          type: string
+        category:
+          type: string
+        priority:
+          $ref: '#/components/schemas/Priority'
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        reportedBy:
+          $ref: '#/components/schemas/User'
+        reportedAt:
+          type: string
+          format: date-time
+        technician:
+          $ref: '#/components/schemas/User'
+        assignedBy:
+          $ref: '#/components/schemas/User'
+        deadline:
+          type: string
+          format: date-time
+        override:
+          type: boolean
+        overrideReason:
+          type: string
+        overrideBy:
+          $ref: '#/components/schemas/User'
+        overrideReview:
+          $ref: '#/components/schemas/OverrideReview'
+        overrideReviewedBy:
+          $ref: '#/components/schemas/User'
+        overrideReviewNote:
+          type: string
+        workDone:
+          type: string
+        actualCostKobo:
+          type: integer
+          format: int64
+          x-unit: kobo
+        completedOn:
+          type: string
+          format: date
+        verifiedBy:
+          $ref: '#/components/schemas/User'
+        verifiedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        estimates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Estimate'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusHistoryEntry'
+
+    Problem:
+      type: object
+      required: [type, title, status, detail, code, requestId]
+      properties:
+        type:
+          type: string
+          format: uri
+          example: about:blank
+        title:
+          type: string
+          example: Conflict
+        status:
+          type: integer
+          example: 409
+        detail:
+          type: string
+          example: The request has already been assigned.
+        code:
+          type: string
+          example: ALREADY_ASSIGNED
+        requestId:
+          type: string
+          format: uuid
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
