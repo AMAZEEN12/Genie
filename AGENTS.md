@@ -27,7 +27,7 @@ Maintenance requests from fault to verified repair (TeSA Cohort 6 capstone, Team
 ## Architecture
 - `contract/`: OpenAPI 3.1 and the Prism mock.
 - `service/`: package `ng.tesa.genie` (`config`, `auth`, `user`, `request`, `estimate`, `common`). Migrations, undo scripts and seed live under `src/main/resources/db/`.
-- `web/`: React app; types generated from the contract.
+- `web/`: React app; types generated from the contract. Route objects use React Router's `Component` property. Product feature code lives in `src/features/<feature>`, shared route shells in `src/layouts`, and generic pages in `src/pages`; don't recreate `src/routes`.
 - `.github/workflows/`: `ci.yml`, `deploy.yml`, `concurrency-evidence.yml`.
 
 ## Protected paths
