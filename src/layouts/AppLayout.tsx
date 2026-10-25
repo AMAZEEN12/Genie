@@ -1,6 +1,6 @@
 import { Link, Outlet } from 'react-router';
 
-export function Layout() {
+export function AppLayout() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded focus:bg-white focus:px-3 focus:py-2">
