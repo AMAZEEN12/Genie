@@ -197,7 +197,7 @@ public class RequestRepository {
                     deadline = :deadline,
                     assigned_by = :assignedBy,
                     version = version + 1
-                WHERE id = :id AND status = 'REPORTED' AND version = :expectedVersion
+                WHERE id = :id
                 """)
                 .param("id", id)
                 .param("technicianId", technicianId)
