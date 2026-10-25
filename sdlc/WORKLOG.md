@@ -11,17 +11,19 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - Frontend (`web/` screens, Step 8): Owned and handled by Victor Oyeleke.
   - Backend & Deployment (Steps 1, 4, 10): Handled by Nnaemeka Chukwuma / agent.
 - **Backend Status:** Complete on branch `feat/backend-api` with PR #2 open at https://github.com/AMAZEEN12/Genie/pull/2.
-  - 35 integration tests across 14 test classes passing on Testcontainers Postgres 17.
+  - 39 tests green across 15 test classes (5 unit tests, 34 integration tests) passing on Testcontainers Postgres 17.
+  - Hardened JWT secret handling with fail-fast enforcement in production and unit test coverage (`TokenServiceTest`).
+  - Strict Jackson 3 money deserialization configured (`JacksonConfig`) enforcing integer kobo and rejecting float/string coercions (`NoFloatSchemaIT`).
   - OpenAPI 3.1 contract lint clean.
   - Flyway migrations V1-V4 and rollback undo scripts U1-U4.
   - Demo seed dataset (35 requests across 7 statuses + 4 edge cases).
-- **In progress:** Backend deployment setup & failing-test evidence.
+- **In progress:** Failing-test evidence branch & CI/CD deployment workflows.
 - **Next backend & deployment actions:**
-  1. Fix JWT secret fallback in `service/src/main/resources/application.yml` (fail fast if missing in production, supply in test profile).
-  2. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`).
-  3. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails when the version check is removed.
+  1. Push hardened backend configuration & tests to `feat/backend-api` (PR #2).
+  2. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails when the version check is removed.
+  3. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`) and open PR #3.
   4. Coordinate Neon & Render production secrets and deployment hook.
-  5. Update `README.md` with demo credentials, free-tier audit table, and deployment instructions (R14).
+  5. Update `README.md` with demo credentials, free-tier audit table, and deployment instructions (R14) and open PR #4.
 - **Waiting on:** PR #2 merge to `main`, GitHub repository environment/secrets configuration, and Victor's frontend completion.
 
 ## How to continue without the sdlc skill
@@ -82,3 +84,4 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · Opened GitHub PR #2 for `feat/backend-api` targeting `main` (covers steps 2, 3, 5, 6, 7, 9 with OpenAPI contract, Flyway migrations V1-V4 with undo scripts, SQL transition guards, 35-test integration suite, and demo seed).
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · Resumed via `/sdlc continue working on genie`. Assessed artifact chain and open steps.
 - 2026-10-25 · agent (for Nnaemeka Chukwuma) · User confirmed frontend is assigned to Victor; scoped ongoing agent focus to backend completion and deployment workflows. Prepared task roadmap.
+- 2026-10-25 · agent (for Nnaemeka Chukwuma) · Hardened backend security and deserialization: removed default JWT secret fallback from `application.yml`, enforced fail-fast key validation in `TokenService.java` with 4 unit tests in `TokenServiceTest.java`, and configured Jackson 3 in `JacksonConfig.java` to disable float-as-int and string-to-number coercions for money fields (`NoFloatSchemaIT`). Full test suite verified green (39 tests across 15 test classes in `./mvnw verify`).

@@ -36,7 +36,14 @@ public class TokenService {
     }
 
     public static SecretKey signingKey(String secret) {
-        return new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT secret must be configured via genie.security.jwt-secret or JWT_SECRET environment variable");
+        }
+        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 bytes for HMAC-SHA256, got " + bytes.length);
+        }
+        return new SecretKeySpec(bytes, "HmacSHA256");
     }
 
     public record IssuedToken(String value, Instant expiresAt) {
