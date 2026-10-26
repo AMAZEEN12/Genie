@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../app/authContext';
 import {
   listRequestsApi,
+  listTechniciansApi,
   type ListRequestsFilter,
   type Priority,
   type RequestStatus,
@@ -57,8 +58,6 @@ export function RequestListPage({ preset }: RequestListPageProps) {
   const effectivePreset = useMemo(() => {
     if (preset) return preset;
     if (userRole === 'EMPLOYEE') return 'mine';
-    if (userRole === 'TECHNICIAN') return 'my-jobs';
-    if (userRole === 'FINANCE') return 'approvals';
     return 'all';
   }, [preset, userRole]);
 
@@ -69,7 +68,15 @@ export function RequestListPage({ preset }: RequestListPageProps) {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>('All categories');
   const [selectedPriority, setSelectedPriority] = useState<Priority | 'ALL'>('ALL');
+  const [selectedTechnician, setSelectedTechnician] = useState<string>('ALL');
   const [overrideOnly, setOverrideOnly] = useState<boolean>(false);
+
+  // Available technicians for assignment filtering
+  const { data: technicians } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: ({ signal }) => listTechniciansApi(signal),
+    enabled: effectivePreset !== 'my-jobs' && userRole !== 'EMPLOYEE',
+  });
 
   // Build query filter parameters
   const queryFilters: ListRequestsFilter = useMemo(() => {
@@ -79,13 +86,15 @@ export function RequestListPage({ preset }: RequestListPageProps) {
     if (selectedPriority !== 'ALL') filters.priority = selectedPriority;
     if (overrideOnly) filters.override = true;
 
-    // For technician's "my jobs", filter by their user ID if available
-    if (effectivePreset === 'my-jobs' && userId) {
-      filters.technicianId = userId;
+    // For technician's "my jobs", filter by their user ID or email
+    if (effectivePreset === 'my-jobs' && (userId || user?.email)) {
+      filters.technicianId = userId || user?.email;
+    } else if (selectedTechnician !== 'ALL') {
+      filters.technicianId = selectedTechnician;
     }
 
     return filters;
-  }, [selectedStatus, selectedCategory, selectedPriority, overrideOnly, effectivePreset, userId]);
+  }, [selectedStatus, selectedCategory, selectedPriority, overrideOnly, effectivePreset, userId, user?.email, selectedTechnician]);
 
   const { data: requests, isLoading, isError, refetch } = useQuery({
     queryKey: ['requests', queryFilters],
@@ -96,13 +105,15 @@ export function RequestListPage({ preset }: RequestListPageProps) {
     setSelectedStatus('ALL');
     setSelectedCategory('All categories');
     setSelectedPriority('ALL');
+    setSelectedTechnician('ALL');
     setOverrideOnly(false);
   };
 
   const hasActiveFilters =
-    selectedStatus !== 'ALL' ||
+    (effectivePreset === 'approvals' ? selectedStatus !== 'ESTIMATE_SUBMITTED' : selectedStatus !== 'ALL') ||
     selectedCategory !== 'All categories' ||
     selectedPriority !== 'ALL' ||
+    (effectivePreset !== 'my-jobs' && selectedTechnician !== 'ALL') ||
     overrideOnly;
 
   // Title and subtitle
@@ -210,6 +221,25 @@ export function RequestListPage({ preset }: RequestListPageProps) {
                 </option>
               ))}
             </select>
+
+            {/* Technician Dropdown (when not already viewing personal jobs or employee) */}
+            {effectivePreset !== 'my-jobs' && userRole !== 'EMPLOYEE' && (
+              <select
+                aria-label="Filter by technician"
+                value={selectedTechnician}
+                onChange={(e) => setSelectedTechnician(e.target.value)}
+                className="px-3 py-1.5 rounded-[10px] bg-[#0D0D0D] border border-white/14 text-xs text-white focus:outline-none focus:border-[#E1EE04] cursor-pointer"
+              >
+                <option value="ALL" className="bg-[#1A1A1A] text-white">
+                  All technicians
+                </option>
+                {technicians?.map((tech) => (
+                  <option key={tech.id} value={tech.id} className="bg-[#1A1A1A] text-white">
+                    {tech.displayName}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* Urgent Override Only Toggle */}
             <label className="inline-flex items-center gap-2 text-xs text-[#A8A8A8] hover:text-white cursor-pointer select-none">

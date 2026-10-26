@@ -145,6 +145,68 @@ describe('requests API & mock persistence layer', () => {
     const technicians = await listTechniciansApi();
     expect(technicians).toHaveLength(2);
     expect(technicians[0].role).toBe('TECHNICIAN');
-    expect(technicians[0].displayName).toContain('Babatunde Adeleke');
+    expect(technicians[0].displayName).toContain('Emeka Obi');
+  });
+
+  it('assigns a technician to a request and displays it when filtered by technicianId', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (init?.method === 'PUT' && url.includes('/assignment')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: '67518891-24dc-54c5-9885-a00ecc541fa7',
+                reference: 'string',
+                title: 'string',
+                status: 'ASSIGNED',
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        if (url.includes('/requests/67518891-24dc-54c5-9885-a00ecc541fa7')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: '67518891-24dc-54c5-9885-a00ecc541fa7',
+                reference: 'GEN-001',
+                title: 'Flickering fluorescent tube in reception',
+                status: 'REPORTED',
+                version: 1,
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(
+            JSON.stringify([
+              { id: 'mock-1', reference: 'string', title: 'string', status: 'REPORTED' },
+            ]),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }),
+    );
+
+    // Assign GEN-001 to DEMO_TECHNICIAN_1
+    const { assignTechnicianApi } = await import('./requests');
+    const updated = await assignTechnicianApi('67518891-24dc-54c5-9885-a00ecc541fa7', {
+      technicianId: '01a755a8-ed55-52eb-be2c-6851900a07e3',
+      deadline: '2026-10-30T12:00:00Z',
+      version: 1,
+    });
+
+    expect(updated.status).toBe('ASSIGNED');
+    expect(updated.technician?.id).toBe('01a755a8-ed55-52eb-be2c-6851900a07e3');
+
+    // Query listRequestsApi for that technician
+    const techJobs = await listRequestsApi({ technicianId: '01a755a8-ed55-52eb-be2c-6851900a07e3' });
+    expect(techJobs.length).toBeGreaterThan(0);
+    const assignedJob = techJobs.find((j) => j.id === '67518891-24dc-54c5-9885-a00ecc541fa7');
+    expect(assignedJob).toBeDefined();
+    expect(assignedJob?.reference).toBe('GEN-001');
+    expect(assignedJob?.status).toBe('ASSIGNED');
   });
 });

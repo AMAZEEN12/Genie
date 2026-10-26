@@ -95,6 +95,10 @@ describe('RequestListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(requestsApi, 'listRequestsApi').mockResolvedValue(mockRequests);
+    vi.spyOn(requestsApi, 'listTechniciansApi').mockResolvedValue([
+      requestsApi.DEMO_TECHNICIAN_1,
+      requestsApi.DEMO_TECHNICIAN_2,
+    ]);
   });
 
   it('renders requests table with reference numbers and titles', async () => {
@@ -140,6 +144,26 @@ describe('RequestListPage', () => {
 
     await waitFor(() => {
       expect(spy).toHaveBeenCalledWith(expect.objectContaining({ override: true }), expect.anything());
+    });
+  });
+
+  it('filters by technician using dropdown', async () => {
+    const spy = vi.spyOn(requestsApi, 'listRequestsApi').mockResolvedValue([mockRequests[1]]);
+
+    renderRequestListPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Emeka Obi (Lead Technician)' })).toBeInTheDocument();
+    });
+
+    const techSelect = screen.getByLabelText(/filter by technician/i);
+    fireEvent.change(techSelect, { target: { value: '01a755a8-ed55-52eb-be2c-6851900a07e3' } });
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ technicianId: '01a755a8-ed55-52eb-be2c-6851900a07e3' }),
+        expect.anything(),
+      );
     });
   });
 

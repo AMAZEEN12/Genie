@@ -211,7 +211,12 @@ export function RequestDetailPage() {
     ? request.estimates[request.estimates.length - 1]
     : null;
 
-  const isAssignedTechnician = user?.id === request.technician?.id;
+  const isAssignedTechnician = Boolean(
+    user?.role === 'TECHNICIAN' && (
+      (user?.id && request.technician?.id && user.id === request.technician.id) ||
+      (user?.email && request.technician?.email && user.email.toLowerCase() === request.technician.email.toLowerCase())
+    )
+  );
 
   return (
     <div className="space-y-6">

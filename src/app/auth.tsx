@@ -19,9 +19,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((me) => {
         if (!active) return;
         const storedUser = getStoredUser();
-        const isMockResponse = me.email === 'string' || me.displayName === 'string';
+        const isMockResponse =
+          me.email === 'string' ||
+          me.displayName === 'string' ||
+          me.id === 'string' ||
+          me.id === '497f6eca-6276-4993-bfeb-53cbbbba6f08';
         const effectiveUser: User = {
           ...me,
+          id: (isMockResponse && storedUser?.id) ? storedUser.id : me.id,
           email: (isMockResponse && storedUser?.email) ? storedUser.email : me.email,
           role: (isMockResponse && storedUser?.role) ? storedUser.role : me.role,
           displayName: (isMockResponse && storedUser?.displayName) ? storedUser.displayName : me.displayName,

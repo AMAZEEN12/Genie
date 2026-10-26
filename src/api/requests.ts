@@ -28,21 +28,21 @@ export interface ListRequestsFilter {
 const LOCAL_REQUESTS_KEY = 'genie_local_requests';
 const LOCAL_DETAILS_KEY = 'genie_local_request_details';
 
-const DEMO_TECHNICIAN_1: User = {
+export const DEMO_TECHNICIAN_1: User = {
   id: '01a755a8-ed55-52eb-be2c-6851900a07e3',
-  displayName: 'Babatunde Adeleke (Senior HVAC Tech)',
+  displayName: 'Emeka Obi (Lead Technician)',
   email: 'technician@genie.test',
   role: 'TECHNICIAN',
 };
 
-const DEMO_TECHNICIAN_2: User = {
-  id: '12b866b9-fe66-63fc-cf3d-7962011b18f4',
-  displayName: 'Emeka Okafor (Electrical Tech)',
+export const DEMO_TECHNICIAN_2: User = {
+  id: '8ee1fe13-dc91-5486-93f1-a95e68809973',
+  displayName: 'Fatima Aliyu (HVAC Specialist)',
   email: 'technician2@genie.test',
   role: 'TECHNICIAN',
 };
 
-const DEMO_EMPLOYEE: User = {
+export const DEMO_EMPLOYEE: User = {
   id: '20f89bc1-9ac5-5637-8cf7-90d23a80f420',
   displayName: 'Amina Bello (Employee)',
   email: 'employee@genie.test',
@@ -258,7 +258,7 @@ export function saveLocalRequest(req: RequestSummary | RequestDetail): void {
       override: req.override,
       version: req.version,
     };
-    const filtered = existing.filter((r) => r.id !== req.id);
+    const filtered = existing.filter((r) => r.id !== req.id && r.reference !== req.reference);
     localStorage.setItem(LOCAL_REQUESTS_KEY, JSON.stringify([summary, ...filtered]));
   } catch {
     // Ignore storage errors
@@ -361,14 +361,25 @@ export async function listRequestsApi(
 
   // If backend returned mock placeholder array, synthesize with local reported requests + seed demo requests:
   const localItems = getLocalRequests();
-  const allMockItems = [...localItems, ...MOCK_SEED_REQUESTS];
+  const localIds = new Set(localItems.map((r) => r.id));
+  const localRefs = new Set(localItems.map((r) => r.reference));
+  const remainingSeed = MOCK_SEED_REQUESTS.filter(
+    (seed) => !localIds.has(seed.id) && !localRefs.has(seed.reference),
+  );
+  const allMockItems = [...localItems, ...remainingSeed];
 
   // Apply filters locally for mock mode:
   return allMockItems.filter((item) => {
     if (filters.status && item.status !== filters.status) return false;
     if (filters.category && item.category !== filters.category) return false;
     if (filters.priority && item.priority !== filters.priority) return false;
-    if (filters.technicianId && item.technician?.id !== filters.technicianId) return false;
+    if (filters.technicianId) {
+      const matchId = item.technician?.id === filters.technicianId;
+      const matchEmail = Boolean(
+        item.technician?.email && item.technician.email.toLowerCase() === filters.technicianId.toLowerCase(),
+      );
+      if (!matchId && !matchEmail) return false;
+    }
     if (filters.override !== undefined && item.override !== filters.override) return false;
     return true;
   });
@@ -459,7 +470,13 @@ export async function assignTechnicianApi(
   const isMock = response.reference === 'string' || response.title === 'string';
   if (isMock) {
     const current = getLocalRequestDetail(id) || (await getRequestApi(id));
-    const tech = payload.technicianId === DEMO_TECHNICIAN_1.id ? DEMO_TECHNICIAN_1 : DEMO_TECHNICIAN_2;
+    const availableTechs = [DEMO_TECHNICIAN_1, DEMO_TECHNICIAN_2];
+    const tech =
+      availableTechs.find(
+        (t) =>
+          t.id === payload.technicianId ||
+          t.email.toLowerCase() === payload.technicianId.toLowerCase(),
+      ) || DEMO_TECHNICIAN_1;
     const updated: RequestDetail = {
       ...current,
       status: 'ASSIGNED',
