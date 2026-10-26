@@ -3,6 +3,10 @@
  * error response (application/problem+json, RFC 9457) becomes an ApiError the screens can act on.
  */
 
+import type { components } from './schema';
+
+export type User = components['schemas']['User'];
+
 export interface Problem {
   type?: string;
   title?: string;
@@ -24,6 +28,7 @@ export class ApiError extends Error {
 }
 
 export const TOKEN_STORAGE_KEY = 'genie_token';
+export const USER_STORAGE_KEY = 'genie_user';
 
 export function getStoredToken(): string | null {
   try {
@@ -42,6 +47,27 @@ export function setStoredToken(token: string | null): void {
     }
   } catch {
     // Ignore storage errors (e.g. private browsing restrictions)
+  }
+}
+
+export function getStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: User | null): void {
+  try {
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
   }
 }
 

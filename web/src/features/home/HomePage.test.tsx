@@ -230,6 +230,144 @@ describe('Home & Login', () => {
     });
   });
 
+  it('resolves MANAGER role when logging in with manager demo credentials against mock', async () => {
+    const mockPrismSession = {
+      token: 'mock-jwt-mgr',
+      expiresAt: '2026-10-26T08:00:00Z',
+      user: {
+        id: '20f89bc1-9ac5-5637-8cf7-90d23a80f421',
+        email: 'string',
+        displayName: 'string',
+        role: 'EMPLOYEE',
+      },
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/health')) {
+          return Promise.resolve(new Response(JSON.stringify({ status: 'UP' }), { status: 200 }));
+        }
+        if (url.includes('/auth/sessions')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(mockPrismSession), {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return Promise.resolve(new Response('{}', { status: 200 }));
+      }),
+    );
+
+    renderAt('/');
+    fireEvent.click(screen.getByRole('button', { name: /^login$/i }));
+    const dialog = screen.getByRole('dialog');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /^manager$/i }));
+    const submitBtn = within(dialog).getByRole('button', { name: /^login$/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(localStorage.getItem('genie_token')).toBe('mock-jwt-mgr');
+      const user = JSON.parse(localStorage.getItem('genie_user') || '{}');
+      expect(user.role).toBe('MANAGER');
+      expect(user.email).toBe('manager@genie.test');
+    });
+  });
+
+  it('resolves TECHNICIAN role when logging in with technician demo credentials against mock', async () => {
+    const mockPrismSession = {
+      token: 'mock-jwt-tech',
+      expiresAt: '2026-10-26T08:00:00Z',
+      user: {
+        id: '20f89bc1-9ac5-5637-8cf7-90d23a80f422',
+        email: 'string',
+        displayName: 'string',
+        role: 'EMPLOYEE',
+      },
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/health')) {
+          return Promise.resolve(new Response(JSON.stringify({ status: 'UP' }), { status: 200 }));
+        }
+        if (url.includes('/auth/sessions')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(mockPrismSession), {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return Promise.resolve(new Response('{}', { status: 200 }));
+      }),
+    );
+
+    renderAt('/');
+    fireEvent.click(screen.getByRole('button', { name: /^login$/i }));
+    const dialog = screen.getByRole('dialog');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /^technician$/i }));
+    const submitBtn = within(dialog).getByRole('button', { name: /^login$/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(localStorage.getItem('genie_token')).toBe('mock-jwt-tech');
+      const user = JSON.parse(localStorage.getItem('genie_user') || '{}');
+      expect(user.role).toBe('TECHNICIAN');
+      expect(user.email).toBe('technician@genie.test');
+    });
+  });
+
+  it('resolves FINANCE role when logging in with finance demo credentials against mock', async () => {
+    const mockPrismSession = {
+      token: 'mock-jwt-fin',
+      expiresAt: '2026-10-26T08:00:00Z',
+      user: {
+        id: '20f89bc1-9ac5-5637-8cf7-90d23a80f423',
+        email: 'string',
+        displayName: 'string',
+        role: 'EMPLOYEE',
+      },
+    };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/health')) {
+          return Promise.resolve(new Response(JSON.stringify({ status: 'UP' }), { status: 200 }));
+        }
+        if (url.includes('/auth/sessions')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(mockPrismSession), {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return Promise.resolve(new Response('{}', { status: 200 }));
+      }),
+    );
+
+    renderAt('/');
+    fireEvent.click(screen.getByRole('button', { name: /^login$/i }));
+    const dialog = screen.getByRole('dialog');
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /^finance$/i }));
+    const submitBtn = within(dialog).getByRole('button', { name: /^login$/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(localStorage.getItem('genie_token')).toBe('mock-jwt-fin');
+      const user = JSON.parse(localStorage.getItem('genie_user') || '{}');
+      expect(user.role).toBe('FINANCE');
+      expect(user.email).toBe('finance@genie.test');
+    });
+  });
+
   it('shows a not-found page for unknown addresses', () => {
     respondWith(200, { status: 'UP' });
     renderAt('/no-such-page');
