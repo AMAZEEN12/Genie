@@ -236,4 +236,5 @@ describe('Home & Login', () => {
     renderAt('/no-such-page');
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
   });
-});
+})
+})
