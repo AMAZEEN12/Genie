@@ -94,5 +94,10 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Fixed erroneous `tools.jackson.annotation.JsonInclude` imports in `RequestSummaryResponse.java` and `RequestDetailResponse.java` to canonical `com.fasterxml.jackson.annotation.JsonInclude`.
   - Added missing `ng.tesa.genie.common.NotFoundException` import in `RequestController.java`.
   - Verified `./mvnw clean test-compile` passes with `BUILD SUCCESS` across all 33 source files and 21 test files; verified web lint, typecheck, and all 11 unit tests pass (`npm test`).
+- 2026-10-26 · Victor Oyeleke · Restructured frontend API and data fetching layer per DM16:
+  - Created `web/src/service/` with subdirectories: `httpclient/` (RFC 9457 error parsing, token management, X-Request-Id header), `endpoints/` (centralized API path map and builders for all 12 endpoints), `images/` (screen mockups and design token references), `models/` (strongly typed Request and Response models per resource matching OpenAPI 3.1 contract), and `api/` (modular resource-scoped clients for auth, requests, estimates, transitions, users, and health).
+  - Created `web/src/hooks/` with resource-specific TanStack Query hooks (`useAuth`, `useRequests`, `useEstimates`, `useTransitions`, `useUsers`, `useHealth`).
+  - Added backward-compatible re-export facades in `web/src/api/` (`auth.ts`, `client.ts`, `health.ts`).
+  - Verified lint (`eslint . --max-warnings 0`), typecheck (`tsc --noEmit`), test suite (11/11 tests passed in Vitest), production build (`tsc -b && vite build`), and OpenAPI 3.1 lint (0 errors).
   - Pushed to `feat/home-and-login`; GitHub Actions CI run `40251289559` succeeded; PR #8 merged into `main` by Victor Oyeleke (`71cf3a0`).
 - 2026-10-26 · agent (for Nnaemeka Chukwuma) · Resolved legacy conflict markers in `sdlc/WORKLOG.md` and brought `Resume here` up to date with merged PRs #1-#8. Opened PR on `docs/clean-worklog`.

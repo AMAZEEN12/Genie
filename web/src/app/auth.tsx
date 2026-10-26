@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getCurrentUser, loginApi, type LoginRequest, type Session, type User } from '../api/auth';
-import { getStoredToken, setStoredToken } from '../api/client';
+import { getCurrentUser, loginApi } from '../service/api/auth.api';
+import { getStoredToken, setStoredToken } from '../service/httpclient';
+import type { LoginRequest, SessionModel as Session, UserModel as User } from '../service/models/auth.models';
 import { AuthContext } from './authContext';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

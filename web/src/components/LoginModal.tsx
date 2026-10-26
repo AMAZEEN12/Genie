@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { DEMO_USERS, getRoleHomePath } from '../api/auth';
-import { useAuth } from '../app/authContext';
-import { ApiError } from '../api/client';
+import { DEMO_USERS, getRoleHomePath } from '../service/api/auth.api';
+import { ApiError } from '../service/httpclient';
+import { useAuth } from '../hooks/useAuth';
 
 export interface LoginModalProps {
   isOpen: boolean;
@@ -229,3 +229,4 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     </div>
   );
 }
+
