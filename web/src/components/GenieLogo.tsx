@@ -17,7 +17,7 @@ export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
     sm: { width: 14, height: 26 },
     md: { width: 20, height: 38 },
     lg: { width: 32, height: 62 },
-    hero: { width: 64, height: 124 },
+    hero: { width: 64, height: 128 },
   }[size];
 
   return (
@@ -91,3 +91,4 @@ export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
     </div>
   );
 }
+
