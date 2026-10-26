@@ -6,51 +6,15 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-<<<<<<< HEAD
-- **Stage:** Implementation & Deployment (EXECUTION.md).
-- **Division of Work:**
-  - Frontend (`web/` screens, Step 8): Owned and handled by Victor Oyeleke.
-  - Backend & Deployment (Steps 1, 4, 10): Handled by Nnaemeka Chukwuma / agent.
-- **Backend Status:** Complete on branch `feat/backend-api` with PR #2 open at https://github.com/AMAZEEN12/Genie/pull/2.
-  - 39 tests green across 15 test classes (5 unit tests, 34 integration tests) passing on Testcontainers Postgres 17.
-  - Hardened JWT secret handling with fail-fast enforcement in production and unit test coverage (`TokenServiceTest`).
-  - Strict Jackson 3 money deserialization configured (`JacksonConfig`) enforcing integer kobo and rejecting float/string coercions (`NoFloatSchemaIT`).
-  - OpenAPI 3.1 contract lint clean.
-  - Flyway migrations V1-V4 and rollback undo scripts U1-U4.
-  - Demo seed dataset (35 requests across 7 statuses + 4 edge cases).
-- **In progress:** Failing-test evidence branch & CI/CD deployment workflows.
-- **Next backend & deployment actions:**
-<<<<<<< HEAD
-  1. Push hardened backend configuration & tests to `feat/backend-api` (PR #2) - **Completed**.
-  2. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`) and open PR #5 - **Completed**.
-  3. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails without the version guard, and open PR #6 - **Completed**.
-  4. Update `README.md` with demo credentials, free-tier audit table (deploy-plan §1), and deployment instructions (R14) and open PR #7 - **In Progress**.
-  5. Coordinate Neon & Render production secrets and deployment hook.
-- **Waiting on:** PR merges to `main`, GitHub repository environment/secrets configuration, and Victor's frontend completion.
-=======
-  1. Push hardened backend configuration & tests to `feat/backend-api` (PR #2) - **Done**.
-  2. Create GitHub Actions CI & Evidence workflows (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`, and helper scripts in `.github/scripts/`) and open PR #3 - **In Progress**.
-  3. Create failing-test evidence branch `evidence/no-assignment-guard` (Step 10) proving `AssignmentConcurrencyIT` fails when the version check is removed.
-  4. Coordinate Neon & Render production secrets and deployment hook.
-  5. Update `README.md` with demo credentials, free-tier audit table, and deployment instructions (R14) and open PR #4.
-- **Waiting on:** PR #2 merge to `main`, GitHub repository environment/secrets configuration, and Victor's frontend completion.
-=======
-- **Stage:** Implementation (EXECUTION.md).
-- **Step:** Backend implementation merged to `main` in PR #2 (`11ccdad`):
-  - Step 2 (Contract): `contract/openapi.yaml` covering all MVP paths, security, models and RFC 9457 Problem details. Linted with `@redocly/cli` (0 errors). `contract/README.md` documents Prism mock on port 4711 (DM8). Types generated into `web/src/api/schema.d.ts`. `decisions.md` §3 signed by Isaac Bassey & Nnaemeka Chukwuma.
-  - Steps 3, 5, 6, 7 (Database & Service): Flyway migrations `V1__users.sql` to `V4__append_only.sql` with undo scripts `U1` to `U4` and append-only trigger. `MigrationUndo` runner. Plain SQL with Spring Boot 4 `JdbcClient`, JWT auth with BCrypt (`Genie-Demo-2026`), role checks, version-guarded assignment (`UPDATE ... WHERE id=:id AND status='REPORTED' AND version=:v`, R4), transition guards (R6 START, R7 OVERRIDE_START, R8 COMPLETE, R9 VERIFY), finance override reviews, and history.
-  - Step 9 (Seed & Tests): `tools/seed/generate_demo_seed.py` generates `R__seed_demo.sql` (35 requests across all 7 statuses + 4 awkward cases). Full test suite passing in `mvnw verify` using Testcontainers Postgres 17: 35 tests across 14 test classes (PasswordTest, HealthIT, AuthorizationIT, NoFloatSchemaIT, MigrationRollbackIT, EstimateIT, AssignmentConcurrencyIT with 10 repeated runs, CloseRulesIT, HistoryAppendOnlyIT, IdempotencyIT, OverrideIT, StartWithoutApprovalIT, SeedVerificationIT, MondayJourneyIT).
-  - Web: vitest (4 passed) and eslint clean.
-- **In progress:** nothing half-done.
-- **Next action:** Step 4 (deploy wiring and CI by Blessing) and Step 8 (screens by Victor).
-- **Waiting on:** branch protection, CODEOWNERS and the `production` environment on the GitHub repo (Blessing, step 1). Isaac Bassey's collaborator access.
-- **Handover notes (2026-10-25, checked against GitHub):**
-  - **PR:** GitHub PR #1 (scaffold) is merged into `main` (`dc454bc`). GitHub PR #2 (`feat/backend-api`) is merged into `main` (`11ccdad`).
-  - **Committed default JWT secret, to fix before any deploy:** `service/src/main/resources/application.yml` on `feat/backend-api` has a default for the JWT secret, `${JWT_SECRET:genie-...}`. A deployed service that forgets `JWT_SECRET` would then sign tokens with a key published in the repository. Stockwise uses `${JWT_SECRET:}` and refuses to start without it; do the same here, and set the secret in the test configuration.
-  - **Contract sign-off:** the log says `decisions.md` §3 is signed by Isaac Bassey and Nnaemeka Chukwuma. Confirm Isaac actually agreed before relying on it; in Stockwise his half is still pending.
-  - **Not verified this session:** the 35-test result and the web checks reported above weren't re-run during the handover.
->>>>>>> origin/main
->>>>>>> feat/ci-cd-workflows
+- **Stage:** Implementation & Frontend Architecture (EXECUTION.md Step 8).
+- **Frontend Architecture:** Reorganized into `web/src/service/` (with `httpclient/`, `endpoints/`, `images/`, `models/`, and `api/`) and `web/src/hooks/` (with per-resource query and mutation hooks).
+- **Backend Status:** Merged into `main` (`11ccdad` in PR #2, `71cf3a0` in PR #8) with Flyway migrations V1-V4, plain SQL `JdbcClient` transitions, strict money Jackson deserialization, and 35-test integration suite.
+- **Contract Status:** Valid OpenAPI 3.1 specification (`contract/openapi.yaml`) with 0 errors via `@redocly/cli`.
+- **In progress:** Role-specific screen implementations starting from `/requests/new` and `/requests`.
+- **Next frontend actions:**
+  1. Build Request Reporting screen (`/requests/new`) matching `Request a repair` design mockup.
+  2. Build Requests Dashboard screen (`/requests`) matching `Requests list` design mockup.
+- **Waiting on:** Product owner review and feature branch merges.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -123,3 +87,8 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Fixed erroneous `tools.jackson.annotation.JsonInclude` imports in `RequestSummaryResponse.java` and `RequestDetailResponse.java` to canonical `com.fasterxml.jackson.annotation.JsonInclude`.
   - Added missing `ng.tesa.genie.common.NotFoundException` import in `RequestController.java`.
   - Verified `./mvnw clean test-compile` passes with `BUILD SUCCESS` across all 33 source files and 21 test files; verified web lint, typecheck, and all 11 unit tests pass (`npm test`).
+- 2026-10-26 · Victor Oyeleke · Restructured frontend API and data fetching layer per DM16:
+  - Created `web/src/service/` with subdirectories: `httpclient/` (RFC 9457 error parsing, token management, X-Request-Id header), `endpoints/` (centralized API path map and builders for all 12 endpoints), `images/` (screen mockups and design token references), `models/` (strongly typed Request and Response models per resource matching OpenAPI 3.1 contract), and `api/` (modular resource-scoped clients for auth, requests, estimates, transitions, users, and health).
+  - Created `web/src/hooks/` with resource-specific TanStack Query hooks (`useAuth`, `useRequests`, `useEstimates`, `useTransitions`, `useUsers`, `useHealth`).
+  - Added backward-compatible re-export facades in `web/src/api/` (`auth.ts`, `client.ts`, `health.ts`).
+  - Verified lint (`eslint . --max-warnings 0`), typecheck (`tsc --noEmit`), test suite (11/11 tests passed in Vitest), production build (`tsc -b && vite build`), and OpenAPI 3.1 lint (0 errors).
