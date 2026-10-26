@@ -55,3 +55,33 @@ Logged by: **Nnaemeka Chukwuma** (`<nnaemeka.chukwuma@univaciti.com>`) for Produ
   - Existing: `POST /requests` (`CreateRequest` schema).
 - **Verification:** 4 Vitest unit tests in `ReportFaultPage.test.tsx` verifying form render, priority pill toggle, successful submission with navigation, and API error alerts.
 
+---
+
+## 3. Request List & Filter Views (`feat/request-list-screen`)
+
+- **Screen / Artifact Source:**
+  - `GENIE request list/All requests · 1440.png`
+  - `GENIE request list/All requests · 360.png`
+  - `Genie - my request/My requests · 1440.png`
+  - `Genie - my request/My requests · 360.png`
+  - `GENIE request list/States.png`
+- **Decisions Made:**
+  1. **Dual Responsive Representation:**
+     - Desktop view (`md:block`): Semantic `<table>` wrapped in `<div role="region" aria-label="Maintenance requests directory" tabIndex={0} className="overflow-x-auto">` with sticky header per `modern-web-guidance` responsive-table specifications.
+     - Mobile view (`md:hidden`): Responsive card stack displaying Reference ID, StatusBadge, PriorityBadge with urgent override chip, Equipment tag, Location, Technician, and reported date.
+  2. **Role Presets:**
+     - `/requests`: All requests (or Employee's own requests if Employee role).
+     - `/my-jobs`: Technician assigned requests (filters by `technicianId`).
+     - `/approvals`: Finance requests awaiting decision (filters by `status=ESTIMATE_SUBMITTED`).
+  3. **Multi-Faceted Filtering:**
+     - Horizontal scrolling status pills (`ALL`, `REPORTED`, `ASSIGNED`, `ESTIMATE_SUBMITTED`, `ESTIMATE_APPROVED`, `IN_PROGRESS`, `COMPLETED`, `VERIFIED_CLOSED`).
+     - Category dropdown, Priority dropdown, and "Urgent override only" toggle.
+     - "Clear filters" action appears dynamically when any filter is active.
+  4. **Reusable Badges:**
+     - `StatusBadge`: colored status pill with indicator dot matching design token scheme.
+     - `PriorityBadge`: priority badge with direction/hazard glyphs and distinct "OVERRIDE" badge when flagged.
+- **Contracts Used:**
+  - Existing: `GET /requests` with query parameters (`status`, `category`, `priority`, `technicianId`, `override`).
+- **Verification:** 7 Vitest unit tests in `RequestListPage.test.tsx` testing table render, status pill filtering, override toggle, filter reset, role preset titles, and empty states.
+
+
