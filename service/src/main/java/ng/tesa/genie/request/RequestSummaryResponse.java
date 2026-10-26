@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import ng.tesa.genie.auth.CurrentUser;
-import tools.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RequestSummaryResponse(
