@@ -6,22 +6,23 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Implementation & Deployment (EXECUTION.md). All MVP PRs except remaining screen implementation are merged to `main`:
-  - **PR #1 (scaffold)**: Spring Boot service and React web app merged (`dc454bc`).
-  - **PR #2 (backend API)**: Complete backend with OpenAPI 3.1 contract, Flyway migrations V1-V4 + rollback undo scripts U1-U4, SQL transition guards, 39 integration and unit tests green on Testcontainers Postgres 17, and demo seed dataset (`11ccdad`).
-  - **PR #3 (frontend structure)**: Layout and feature route organization merged (`d0ceae1`).
-  - **PR #4 (contract alignment)**: Request responses aligned with Monday MVP contract v0.1.1 merged (`4e42a9b`).
-  - **PR #5 (CI/CD workflows)**: GitHub Actions CI with frozen migration, undo script, contract log, test guard, redocly lint, service verify, web checks, and gated deploy workflows merged (`8262a42`).
-  - **PR #6 (negative concurrency evidence)**: Branch `evidence/no-assignment-guard` open as permanent evidence proving `AssignmentConcurrencyIT` fails without R4 guard.
-  - **PR #7 (deployment documentation)**: README updated with demo credentials, free-tier terms audit table, and deployment runbook merged (`56d4b2e`).
-  - **PR #8 (home page & login overlay)**: Design tokens, full-screen landing page, accessible login modal overlay, auth provider with token persistence, and backend DTO/controller compilation fixes merged (`71cf3a0`).
-- **Backend Status:** 100% complete and verified green. Fail-fast JWT secret verification in production; strict Jackson money deserialization; 39 tests green across 15 test classes.
-- **Frontend Status:** Home page, design tokens, login overlay, and auth provider merged. Remaining screens (request list, request detail, report fault) owned by Victor Oyeleke.
+- **Stage:** Frontend MVP Screens Implementation Complete. All 4 design batches from `c:\Users\CHUKWUMA\Downloads\screen\screen` implemented and verified locally:
+  - **Batch 1 (`feat/app-shell-navigation`)**: 240px desktop sidebar by role, role-specific nav items, user profile footer with initial avatar and logout, mobile top bar with hamburger toggle, and mobile slide-out drawer with light-dismiss and `overscroll-behavior: contain`.
+  - **Batch 2 (`feat/report-fault-screen`)**: Fault reporting form matching `Report a fault · 1440/360`, priority selection pills with urgent warning, UUID idempotency key, error alert banners, and redirect on success.
+  - **Batch 3 (`feat/request-list-screen`)**: Responsive data table with sticky headers per modern-web-guidance, stacked mobile cards matching `All requests / My requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`).
+  - **Batch 4 (`feat/request-detail-screen`)**: Two-column detail page matching `Manager · Completed · 1440` and `Role actions.png`, facts card, formatted Naira currency arithmetic, role action bar with modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`), and audit history timeline.
+- **Verification Status:**
+  - 38/38 Vitest tests green across 5 test suites (`AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
+  - ESLint passing with 0 errors and 0 warnings.
+  - TypeScript checking (`tsc --noEmit`) passing with 0 errors.
+  - Vite production build passing with 0 errors.
+  - Screen decisions logged in `docs/screen-decisions.md`.
+- **Local Testing:**
+  - Web development server can be previewed locally with `npm run dev` in `genie/web` (port 5173).
 - **Next Actions:**
-  1. Victor Oyeleke: complete remaining screens (`/app/requests`, `/app/requests/:id`, `/app/report`).
-  2. Coordinate repository secrets for Neon and Render deploy hook.
-  3. Rehearse Monday demo journey with seeded demo accounts.
-- **Waiting on:** Hosting secrets configuration and Victor's remaining screens.
+  1. User tests and verifies screens on localhost (`http://localhost:5173`).
+  2. When user explicitly approves, push feature branch and create pull request.
+- **Waiting on:** User review on localhost before pushing or opening PR.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -96,3 +97,10 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Verified `./mvnw clean test-compile` passes with `BUILD SUCCESS` across all 33 source files and 21 test files; verified web lint, typecheck, and all 11 unit tests pass (`npm test`).
   - Pushed to `feat/home-and-login`; GitHub Actions CI run `40251289559` succeeded; PR #8 merged into `main` by Victor Oyeleke (`71cf3a0`).
 - 2026-10-26 · agent (for Nnaemeka Chukwuma) · Resolved legacy conflict markers in `sdlc/WORKLOG.md` and brought `Resume here` up to date with merged PRs #1-#8. Opened PR on `docs/clean-worklog`.
+- 2026-10-26 · agent (for Nnaemeka Chukwuma) · Implemented complete MVP screens from design references (`c:\Users\CHUKWUMA\Downloads\screen\screen`) adhering to `screen prompt.txt`, design tokens, and SDLC standards:
+  - Added `/design`, `design/`, and `screen/` to `.gitignore`.
+  - Built App Shell on `feat/app-shell-navigation`: 240px desktop sidebar, mobile top bar, mobile drawer with backdrop dismiss, role-based navigation for all 4 roles (Employee, Manager, Technician, Finance), user footer with initial avatar and logout. 9 Vitest tests green.
+  - Built Fault Reporting screen on `feat/report-fault-screen`: form fields matching `Report a fault · 1440/360`, priority selection pills with urgent warning, UUID idempotency key, error alert banner, 4 Vitest tests green.
+  - Built Request List screen on `feat/request-list-screen`: responsive semantic table with sticky headers per modern-web-guidance, mobile stacked card view matching `All requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`). 7 Vitest tests green.
+  - Built Request Detail & Role Actions on `feat/request-detail-screen`: facts card, formatted Nigerian Naira currency arithmetic, role-specific action bar following `Role actions.png`, light-dismiss dialog modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`, and rejection prompt), and status audit history timeline. 7 Vitest tests green.
+  - All 38 unit tests pass cleanly, ESLint passes with 0 errors and 0 warnings, TypeScript compiles with 0 errors, and production build succeeds. Created `docs/screen-decisions.md`. Kept commits local per user instructions ("test on local host first, commit only, create PR when explicitly asked").
