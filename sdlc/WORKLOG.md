@@ -12,8 +12,9 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - **Batch 3 (`feat/request-list-screen`)**: Responsive data table with sticky headers per modern-web-guidance, stacked mobile cards matching `All requests / My requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`).
   - **Batch 4 (`feat/request-detail-screen`)**: Two-column detail page matching `Manager · Completed · 1440` and `Role actions.png`, facts card, formatted Naira currency arithmetic, role action bar with modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`), and audit history timeline.
   - **Auth & Role Routing Fix (`56a367c`)**: Added credentials-to-role resolution for demo/mock logins so Manager (`/requests`), Technician (`/my-jobs`), Finance (`/approvals`), and Employee (`/requests/new`) redirect to their respective landing pages, and persist user role across browser reloads.
+  - **Mock Fault Persistence & Seed Data (`e2134e2`)**: Stored newly submitted faults in local storage during mock mode so they immediately appear at the top of the Manager's `/requests` list, and supplied realistic seed requests (`GEN-001` through `GEN-031`) matching database seed data.
 - **Verification Status:**
-  - 41/41 Vitest tests green across 5 test suites (`AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
+  - 45/45 Vitest tests green across 6 test suites (`requests`, `AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
   - ESLint passing with 0 errors and 0 warnings.
   - TypeScript checking (`tsc --noEmit`) passing with 0 errors.
   - Vite production build passing with 0 errors.
