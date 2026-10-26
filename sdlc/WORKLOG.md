@@ -11,14 +11,16 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - **Batch 2 (`feat/report-fault-screen`)**: Fault reporting form matching `Report a fault · 1440/360`, priority selection pills with urgent warning, UUID idempotency key, error alert banners, and redirect on success.
   - **Batch 3 (`feat/request-list-screen`)**: Responsive data table with sticky headers per modern-web-guidance, stacked mobile cards matching `All requests / My requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`).
   - **Batch 4 (`feat/request-detail-screen`)**: Two-column detail page matching `Manager · Completed · 1440` and `Role actions.png`, facts card, formatted Naira currency arithmetic, role action bar with modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`), and audit history timeline.
+  - **Auth & Role Routing Fix (`56a367c`)**: Added credentials-to-role resolution for demo/mock logins so Manager (`/requests`), Technician (`/my-jobs`), Finance (`/approvals`), and Employee (`/requests/new`) redirect to their respective landing pages, and persist user role across browser reloads.
 - **Verification Status:**
-  - 38/38 Vitest tests green across 5 test suites (`AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
+  - 41/41 Vitest tests green across 5 test suites (`AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
   - ESLint passing with 0 errors and 0 warnings.
   - TypeScript checking (`tsc --noEmit`) passing with 0 errors.
   - Vite production build passing with 0 errors.
   - Screen decisions logged in `docs/screen-decisions.md`.
 - **Local Testing:**
   - Web development server can be previewed locally with `npm run dev` in `genie/web` (port 5173).
+  - Works against both Prism mock (`http://127.0.0.1:4711`) and live Render backend (`https://genie-t2s5.onrender.com/api/v1`).
 - **Next Actions:**
   1. User tests and verifies screens on localhost (`http://localhost:5173`).
   2. When user explicitly approves, push feature branch and create pull request.
