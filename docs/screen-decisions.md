@@ -84,4 +84,47 @@ Logged by: **Nnaemeka Chukwuma** (`<nnaemeka.chukwuma@univaciti.com>`) for Produ
   - Existing: `GET /requests` with query parameters (`status`, `category`, `priority`, `technicianId`, `override`).
 - **Verification:** 7 Vitest unit tests in `RequestListPage.test.tsx` testing table render, status pill filtering, override toggle, filter reset, role preset titles, and empty states.
 
+---
+
+## 4. Request Details, Action Panels & History Timeline (`feat/request-detail-screen`)
+
+- **Screen / Artifact Source:**
+  - `GENIE request details/Manager · Reported · 1440.png` & `360.png`
+  - `GENIE request details/Technician · In progress · 1440.png` & `360.png`
+  - `GENIE request details/Manager · Completed · 1440.png` & `360.png`
+  - `GENIE request details/Role actions.png`
+  - `GENIE request details/States.png`
+- **Decisions Made:**
+  1. **Strict Role-Action Visibility Rule:**
+     - Only actions permitted for the current authenticated role and status are displayed.
+     - When no action is permitted for the authenticated role, a calm indicator (`👤 Waiting for...`) is shown; non-actionable or disabled buttons are avoided.
+     - **Manager**:
+       - `REPORTED`: "Assign technician" modal (`PUT /requests/{id}/assignment`).
+       - `COMPLETED`: "Verify & close repair" transition (`POST /requests/{id}/transitions` with `VerifyTransitionRequest`).
+     - **Technician**:
+       - `ASSIGNED`: "Submit repair estimate" modal (`POST /requests/{id}/estimates`) with integer kobo arithmetic; plus optional "Start work (Urgent override)" for URGENT faults (`OverrideStartTransitionRequest`).
+       - `ESTIMATE_APPROVED`: "Start repair work" transition (`StartTransitionRequest`).
+       - `IN_PROGRESS`: "Complete repair work" modal with actual cost in kobo, work summary, and completed date (`CompleteTransitionRequest`).
+     - **Finance**:
+       - `ESTIMATE_SUBMITTED`: "Approve estimate" & "Reject estimate" with optional rejection note (`PUT /estimates/{id}/decision`).
+       - If `override === true` and unreviewed: "Accept override" / "Flag override" (`PUT /requests/{id}/override-review`).
+     - **Employee**:
+       - Calm status update message showing that request is being processed.
+  2. **Facts & Problem Card:**
+     - Structured facts grid (Building, Location, Equipment, Category, Technician, Deadline, Reported by, Reported date).
+     - Full description container with monospace/pre-wrap styling.
+     - Urgent Override callout banner with reason note and finance audit badge.
+  3. **Estimate & Completion Cards:**
+     - Cost formatted to Nigerian Naira (`formatKoboToNaira`), avoiding floating-point rounding errors.
+     - Decision status pill (Approved / Rejected / Awaiting Decision).
+     - Completion record displaying actual cost, completion date, and manager verification checkmark.
+  4. **Status History Audit Timeline:**
+     - Vertical timeline with status transition dots, glowing active dot for latest transition, actor name/role, and transition notes.
+  5. **Modals with Light-Dismiss:**
+     - `AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`, and Rejection prompt modal all follow `modern-web-guidance` (`<dialog>` light dismiss / backdrop click dismissal, focus management, and validation).
+- **Contracts Used:**
+  - Existing: `GET /requests/{id}`, `GET /requests/{id}/history`, `PUT /requests/{id}/assignment`, `POST /requests/{id}/estimates`, `PUT /estimates/{id}/decision`, `POST /requests/{id}/transitions`, `PUT /requests/{id}/override-review`, `GET /users?role=TECHNICIAN`.
+- **Verification:** 7 Vitest unit tests in `RequestDetailPage.test.tsx` verifying facts rendering, manager technician assignment modal, technician estimate submission modal, finance estimate decision buttons, technician work completion modal, manager verify & close button, and calm waiting indicator.
+
+
 

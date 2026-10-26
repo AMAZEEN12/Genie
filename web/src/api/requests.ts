@@ -12,8 +12,10 @@ export type StatusHistoryEntry = components['schemas']['StatusHistoryEntry'];
 export type AssignRequest = components['schemas']['AssignRequest'];
 export type CreateEstimateRequest = components['schemas']['CreateEstimateRequest'];
 export type EstimateDecisionRequest = components['schemas']['EstimateDecisionRequest'];
+export type EstimateDecision = components['schemas']['EstimateDecision'];
 export type TransitionRequest = components['schemas']['TransitionRequest'];
 export type OverrideReviewRequest = components['schemas']['OverrideReviewRequest'];
+export type OverrideReview = components['schemas']['OverrideReview'];
 
 export interface ListRequestsFilter {
   status?: RequestStatus;
