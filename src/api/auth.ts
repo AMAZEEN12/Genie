@@ -42,3 +42,4 @@ export async function getCurrentUser(token?: string, signal?: AbortSignal): Prom
     signal,
   });
 }
+
