@@ -1,24 +1,26 @@
 export interface GenieLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'hero';
+  size?: 'sm' | 'md' | 'lg' | 'hero' | 'header';
 }
 
 export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
   // Size classes for the overall typography
   const sizeClasses = {
     sm: 'text-2xl',
+    header: 'text-2xl',
     md: 'text-4xl',
     lg: 'text-6xl sm:text-7xl',
     hero: 'text-7xl sm:text-8xl md:text-9xl lg:text-[144px]',
-  }[size];
+  }[size] ?? 'text-2xl';
 
   // Dimension scaling for the 3D 'i' icon
   const iconSizes = {
     sm: { width: 14, height: 26 },
+    header: { width: 14, height: 26 },
     md: { width: 20, height: 38 },
     lg: { width: 32, height: 62 },
     hero: { width: 64, height: 124 },
-  }[size];
+  }[size] ?? { width: 14, height: 26 };
 
   return (
     <div
