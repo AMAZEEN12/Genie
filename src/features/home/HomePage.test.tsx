@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { routes } from '../app/router';
-import { AuthProvider } from '../app/auth';
+import { routes } from '../../app/router';
 
 function renderAt(path: string) {
   const client = new QueryClient({
@@ -48,11 +47,13 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-  localStorage.clear();
-});
+describe('HomePage', () => {
+  it('shows the service as up', async () => {
+    respondWith(200, { status: 'UP', database: 'UP' });
+    renderAt('/');
+    expect(screen.getByRole('heading', { name: 'Report a fault, follow the repair' })).toBeInTheDocument();
+    expect(await screen.findByText('Service is up')).toBeInTheDocument();
+  });
 
 describe('Home & Login', () => {
   it('renders brand wordmark, tagline, and navigation buttons', async () => {

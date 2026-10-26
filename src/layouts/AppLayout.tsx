@@ -1,9 +1,6 @@
 import { Outlet, useLocation } from 'react-router';
 
-export function Layout() {
-  const location = useLocation();
-  const isLandingPage = location.pathname === '/';
-
+export function AppLayout() {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white selection:bg-[#E1EE04] selection:text-[#0D0D0D]">
       <a
