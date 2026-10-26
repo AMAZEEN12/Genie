@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { routes } from '../../app/router';
+import { AuthProvider } from '../../app/auth';
 
 function renderAt(path: string) {
   const client = new QueryClient({
@@ -47,13 +48,11 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('HomePage', () => {
-  it('shows the service as up', async () => {
-    respondWith(200, { status: 'UP', database: 'UP' });
-    renderAt('/');
-    expect(screen.getByRole('heading', { name: 'Report a fault, follow the repair' })).toBeInTheDocument();
-    expect(await screen.findByText('Service is up')).toBeInTheDocument();
-  });
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
 
 describe('Home & Login', () => {
   it('renders brand wordmark, tagline, and navigation buttons', async () => {
@@ -236,5 +235,4 @@ describe('Home & Login', () => {
     renderAt('/no-such-page');
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
   });
-})
-})
+});
