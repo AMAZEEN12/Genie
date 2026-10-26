@@ -27,12 +27,46 @@ export function getRoleHomePath(role: Role): string {
   }
 }
 
+/** Derive role from email for demo/mock logins if the backend returns a mock/default role */
+export function getRoleFromEmail(email: string): Role | null {
+  const lower = email.trim().toLowerCase();
+  if (lower.includes('manager')) return 'MANAGER';
+  if (lower.includes('technician') || lower.includes('tech')) return 'TECHNICIAN';
+  if (lower.includes('finance')) return 'FINANCE';
+  if (lower.includes('employee')) return 'EMPLOYEE';
+  return null;
+}
+
 export async function loginApi(credentials: LoginRequest, signal?: AbortSignal): Promise<Session> {
-  return apiRequest<Session>('/auth/sessions', {
+  const session = await apiRequest<Session>('/auth/sessions', {
     method: 'POST',
     body: credentials,
     signal,
   });
+
+  const emailRole = getRoleFromEmail(credentials.email);
+  const isMockResponse = session.user.email === 'string' || session.user.displayName === 'string';
+  const role = (isMockResponse && emailRole) ? emailRole : (session.user.role || emailRole || 'EMPLOYEE');
+
+  let displayName = session.user.displayName;
+  if (!displayName || displayName === 'string') {
+    if (role === 'MANAGER') displayName = 'Chioma Nwosu (Operations Manager)';
+    else if (role === 'TECHNICIAN') displayName = 'Babatunde Adeleke (Senior HVAC Tech)';
+    else if (role === 'FINANCE') displayName = 'Folasade Adegoke (Finance Lead)';
+    else displayName = 'Amina Bello (Employee)';
+  }
+
+  const email = (session.user.email === 'string' || !session.user.email) ? credentials.email : session.user.email;
+
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      email,
+      role,
+      displayName,
+    },
+  };
 }
 
 export async function getCurrentUser(token?: string, signal?: AbortSignal): Promise<User> {

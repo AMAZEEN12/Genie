@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { getCurrentUser, loginApi, type LoginRequest, type Session, type User } from '../api/auth';
-import { getStoredToken, setStoredToken } from '../api/client';
+import { getStoredToken, getStoredUser, setStoredToken, setStoredUser } from '../api/client';
 import { AuthContext } from './authContext';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(() => getStoredToken());
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(getStoredToken()));
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
+  const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(getStoredToken() && !getStoredUser()));
 
   useEffect(() => {
     const existingToken = getStoredToken();
@@ -18,12 +18,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getCurrentUser(existingToken)
       .then((me) => {
         if (!active) return;
-        setUser(me);
+        const storedUser = getStoredUser();
+        const isMockResponse = me.email === 'string' || me.displayName === 'string';
+        const effectiveUser: User = {
+          ...me,
+          email: (isMockResponse && storedUser?.email) ? storedUser.email : me.email,
+          role: (isMockResponse && storedUser?.role) ? storedUser.role : me.role,
+          displayName: (isMockResponse && storedUser?.displayName) ? storedUser.displayName : me.displayName,
+        };
+        setUser(effectiveUser);
+        setStoredUser(effectiveUser);
         setToken(existingToken);
       })
       .catch(() => {
         if (!active) return;
         setStoredToken(null);
+        setStoredUser(null);
         setToken(null);
         setUser(null);
       })
@@ -39,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (credentials: LoginRequest): Promise<Session> => {
     const session = await loginApi(credentials);
     setStoredToken(session.token);
+    setStoredUser(session.user);
     setToken(session.token);
     setUser(session.user);
     return session;
@@ -46,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setStoredToken(null);
+    setStoredUser(null);
     setToken(null);
     setUser(null);
   };
