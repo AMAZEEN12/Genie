@@ -6,15 +6,22 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Implementation & Frontend Architecture (EXECUTION.md Step 8).
-- **Frontend Architecture:** Reorganized into `web/src/service/` (with `httpclient/`, `endpoints/`, `images/`, `models/`, and `api/`) and `web/src/hooks/` (with per-resource query and mutation hooks).
-- **Backend Status:** Merged into `main` (`11ccdad` in PR #2, `71cf3a0` in PR #8) with Flyway migrations V1-V4, plain SQL `JdbcClient` transitions, strict money Jackson deserialization, and 35-test integration suite.
-- **Contract Status:** Valid OpenAPI 3.1 specification (`contract/openapi.yaml`) with 0 errors via `@redocly/cli`.
-- **In progress:** Role-specific screen implementations starting from `/requests/new` and `/requests`.
-- **Next frontend actions:**
-  1. Build Request Reporting screen (`/requests/new`) matching `Request a repair` design mockup.
-  2. Build Requests Dashboard screen (`/requests`) matching `Requests list` design mockup.
-- **Waiting on:** Product owner review and feature branch merges.
+- **Stage:** Implementation & Deployment (EXECUTION.md). All MVP PRs except remaining screen implementation are merged to `main`:
+  - **PR #1 (scaffold)**: Spring Boot service and React web app merged (`dc454bc`).
+  - **PR #2 (backend API)**: Complete backend with OpenAPI 3.1 contract, Flyway migrations V1-V4 + rollback undo scripts U1-U4, SQL transition guards, 39 integration and unit tests green on Testcontainers Postgres 17, and demo seed dataset (`11ccdad`).
+  - **PR #3 (frontend structure)**: Layout and feature route organization merged (`d0ceae1`).
+  - **PR #4 (contract alignment)**: Request responses aligned with Monday MVP contract v0.1.1 merged (`4e42a9b`).
+  - **PR #5 (CI/CD workflows)**: GitHub Actions CI with frozen migration, undo script, contract log, test guard, redocly lint, service verify, web checks, and gated deploy workflows merged (`8262a42`).
+  - **PR #6 (negative concurrency evidence)**: Branch `evidence/no-assignment-guard` open as permanent evidence proving `AssignmentConcurrencyIT` fails without R4 guard.
+  - **PR #7 (deployment documentation)**: README updated with demo credentials, free-tier terms audit table, and deployment runbook merged (`56d4b2e`).
+  - **PR #8 (home page & login overlay)**: Design tokens, full-screen landing page, accessible login modal overlay, auth provider with token persistence, and backend DTO/controller compilation fixes merged (`71cf3a0`).
+- **Backend Status:** 100% complete and verified green. Fail-fast JWT secret verification in production; strict Jackson money deserialization; 39 tests green across 15 test classes.
+- **Frontend Status:** Home page, design tokens, login overlay, and auth provider merged. Remaining screens (request list, request detail, report fault) owned by Victor Oyeleke.
+- **Next Actions:**
+  1. Victor Oyeleke: complete remaining screens (`/app/requests`, `/app/requests/:id`, `/app/report`).
+  2. Coordinate repository secrets for Neon and Render deploy hook.
+  3. Rehearse Monday demo journey with seeded demo accounts.
+- **Waiting on:** Hosting secrets configuration and Victor's remaining screens.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -92,3 +99,5 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Created `web/src/hooks/` with resource-specific TanStack Query hooks (`useAuth`, `useRequests`, `useEstimates`, `useTransitions`, `useUsers`, `useHealth`).
   - Added backward-compatible re-export facades in `web/src/api/` (`auth.ts`, `client.ts`, `health.ts`).
   - Verified lint (`eslint . --max-warnings 0`), typecheck (`tsc --noEmit`), test suite (11/11 tests passed in Vitest), production build (`tsc -b && vite build`), and OpenAPI 3.1 lint (0 errors).
+  - Pushed to `feat/home-and-login`; GitHub Actions CI run `40251289559` succeeded; PR #8 merged into `main` by Victor Oyeleke (`71cf3a0`).
+- 2026-10-26 · agent (for Nnaemeka Chukwuma) · Resolved legacy conflict markers in `sdlc/WORKLOG.md` and brought `Resume here` up to date with merged PRs #1-#8. Opened PR on `docs/clean-worklog`.
