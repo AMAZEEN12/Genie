@@ -12,6 +12,7 @@ web/playwright-report/
 web/test-results/
 web/coverage/
 *.tsbuildinfo
+web/screen/
 
 # Environment and secrets (never commit)
 .env

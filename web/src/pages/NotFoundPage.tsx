@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-export function NotFound() {
+export function NotFoundPage() {
   return (
     <section aria-labelledby="not-found-title" className="space-y-4 py-12 text-center">
       <h1 id="not-found-title" className="text-3xl font-display font-extrabold text-white">
