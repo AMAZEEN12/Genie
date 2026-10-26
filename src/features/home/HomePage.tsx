@@ -7,7 +7,7 @@ import { GenieLogo } from "../../components/GenieLogo";
 import { LoginModal } from "../../components/LoginModal";
 import { useHealth } from "../../api/health";
 
-export function Home() {
+export function HomePage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
