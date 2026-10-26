@@ -30,6 +30,7 @@ import ng.tesa.genie.auth.Role;
 import ng.tesa.genie.common.ConflictException;
 import ng.tesa.genie.common.ErrorCode;
 import ng.tesa.genie.common.ForbiddenException;
+import ng.tesa.genie.common.NotFoundException;
 
 @RestController
 @RequestMapping("/api/v1/requests")

@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+:root {
+  --bg: #0D0D0D;
+  --surface: #1A1A1A;
+  --surface-raised: #222222;
+  --line: rgb(255 255 255 / 0.14);
+  --text: #FFFFFF;
+  --muted: #A8A8A8;
+  --accent: #E1EE04;
+  --on-accent: #0D0D0D;
+  --danger: #FF6B5E;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --space: 8px;
+  --font-display: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --focus: 3px solid var(--accent);
+  --focus-offset: 2px;
+}
+
+@theme {
+  --color-bg: #0D0D0D;
+  --color-surface: #1A1A1A;
+  --color-surface-raised: #222222;
+  --color-line: rgba(255, 255, 255, 0.14);
+  --color-text-main: #FFFFFF;
+  --color-muted: #A8A8A8;
+  --color-accent: #E1EE04;
+  --color-on-accent: #0D0D0D;
+  --color-danger: #FF6B5E;
+
+  --font-display: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
