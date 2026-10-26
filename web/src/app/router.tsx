@@ -1,5 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
 import { HomePage } from '../features/home/HomePage';
+import { ReportFaultPage } from '../features/requests/ReportFaultPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
@@ -10,6 +11,7 @@ export const routes: RouteObject[] = [
     Component: AppLayout,
     children: [
       { index: true, Component: HomePage },
+      { path: 'requests/new', Component: ReportFaultPage },
       { path: '*', Component: NotFoundPage },
     ],
   },

@@ -32,3 +32,26 @@ Logged by: **Nnaemeka Chukwuma** (`<nnaemeka.chukwuma@univaciti.com>`) for Produ
      - Stored token persistence: `genie_token` in `localStorage`.
 - **Deviations from Design:** None. All design tokens (`--bg: #0D0D0D`, `--surface: #1A1A1A`, `--line: rgba(255,255,255,0.14)`, `--accent: #E1EE04`, rounded `10px` controls) strictly matched.
 - **Verification:** 9 Vitest unit tests in `AppLayout.test.tsx` verifying all 4 roles, mobile drawer toggle, escape dismissal, logout, and protected route fallback.
+
+---
+
+## 2. Fault Reporting Screen (`feat/report-fault-screen`)
+
+- **Screen / Artifact Source:**
+  - `GENIE report a fault/Report a fault · 1440.png`
+  - `GENIE report a fault/Report a fault · 360.png`
+  - `GENIE report a fault/States.png`
+- **Decisions Made:**
+  1. **Form Structure & Fields:**
+     - Title, Category, Priority pills, Building, Location, Equipment, Description.
+     - Priority pill radio buttons (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) with dedicated visual focus, aria semantics (`role="radiogroup"`), and high-contrast highlight for URGENT (`#FF6B5E`).
+  2. **API & Idempotency:**
+     - Mutation calls `POST /requests` with standard UUID `Idempotency-Key` and `X-Request-Id` headers.
+     - On success: invalidates `['requests']` TanStack Query cache and navigates directly to the created request detail (`/requests/${newRequest.id}`).
+  3. **Error Handling & Validation:**
+     - RFC 9457 Problem details mapped to inline alert banner above the form with error details.
+     - Submit button displays loading spinner and disables while mutation is pending to prevent accidental double-submits.
+- **Contracts Used:**
+  - Existing: `POST /requests` (`CreateRequest` schema).
+- **Verification:** 4 Vitest unit tests in `ReportFaultPage.test.tsx` verifying form render, priority pill toggle, successful submission with navigation, and API error alerts.
+
