@@ -26,10 +26,10 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - Web development server can be previewed locally with `npm run dev` in `genie/web` (port 5173).
   - Works against both Prism mock (`http://127.0.0.1:4711`) and live Render backend (`https://genie-t2s5.onrender.com/api/v1`).
 - **Next Actions:**
-  1. User tests and verifies all role flows and screens on localhost (`http://localhost:5173`).
-  2. Rebase `feat/request-detail-screen` onto latest `origin/main` (`14a4cb9`), reconcile with DM16 service structure, and verify CI checks.
-  3. Push feature branch and open PR when user explicitly confirms.
-- **Waiting on:** User review on localhost before rebasing and pushing.
+  1. Pull Request [#12](https://github.com/AMAZEEN12/Genie/pull/12) is open and all 6 CI checks are green on GitHub Actions.
+  2. Await team review and merge into `main` by Victor Oyeleke / Isaac Bassey.
+  3. Continuous Deployment workflow will automatically deploy frontend to Vercel upon merge.
+- **Waiting on:** Team review on PR #12.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -135,4 +135,9 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Fixed `GEN-005` in `MOCK_SEED_REQUESTS` to `override: false`.
   - Moved `Start work (Urgent override)` action from Technician to Manager in `RequestDetailPage.tsx` per DM6 and backend permissions (`Only managers can initiate an urgent override`).
   - Added unit test in `requests.test.ts` verifying `override: false` on creation even when mock returns `override: true`. All 49 Vitest tests green, typecheck clean, lint clean with 0 warnings, production build clean.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Reconciled branch with `origin/main` (`14a4cb9`), pushed, and opened GitHub PR #12:
+  - Resolved 6 merge conflicts with Isaac's timing-safe auth and request ID logging, and Victor's DM16 `web/src/service/` layer while preserving all 4 complete MVP screens.
+  - Verified full test suite (49/49 Vitest tests passing), clean TypeScript compilation (`tsc --noEmit`), zero ESLint warnings, and clean Vite production build.
+  - Pushed `feat/request-detail-screen` to remote and opened Pull Request [#12](https://github.com/AMAZEEN12/Genie/pull/12).
+  - All 6 GitHub Actions CI checks completed with `success` (Secret scan, Guards, Contract lint, Service verify, Web verify, and Vercel preview comments). Mergeable status: clean.
 
