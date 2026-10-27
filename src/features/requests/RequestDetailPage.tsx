@@ -113,7 +113,7 @@ export function RequestDetailPage() {
       estimateId: string;
       decision: EstimateDecision;
       reason?: string;
-    }) => decideEstimateApi(estimateId, { decision, reason }),
+    }) => decideEstimateApi(estimateId, { decision, reason }, undefined, id),
     onSuccess: () => {
       setIsRejectOpen(false);
       setRejectReason('');

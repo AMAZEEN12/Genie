@@ -496,7 +496,7 @@ export async function getRequestApi(id: string, signal?: AbortSignal): Promise<R
       const seed = MOCK_SEED_REQUESTS.find((r) => r.id === id || r.reference === id);
       if (seed) {
         const seedEstimates = getSeedEstimates(seed);
-        return {
+        const detail: RequestDetail = {
           ...response,
           ...seed,
           description: `Detailed fault report for ${seed.title}. Located at ${seed.building}, ${seed.location}.`,
@@ -538,6 +538,8 @@ export async function getRequestApi(id: string, signal?: AbortSignal): Promise<R
             }] : []),
           ],
         };
+        saveLocalRequestDetail(detail);
+        return detail;
       }
     }
     return response;
@@ -546,7 +548,7 @@ export async function getRequestApi(id: string, signal?: AbortSignal): Promise<R
     const seed = MOCK_SEED_REQUESTS.find((r) => r.id === id || r.reference === id);
     if (seed) {
       const seedEstimates = getSeedEstimates(seed);
-      return {
+      const detail: RequestDetail = {
         id: seed.id,
         reference: seed.reference,
         title: seed.title,
@@ -601,6 +603,8 @@ export async function getRequestApi(id: string, signal?: AbortSignal): Promise<R
           }] : []),
         ],
       };
+      saveLocalRequestDetail(detail);
+      return detail;
     }
     throw err;
   }
@@ -687,6 +691,7 @@ export async function decideEstimateApi(
   estimateId: string,
   payload: EstimateDecisionRequest,
   signal?: AbortSignal,
+  requestId?: string,
 ): Promise<Estimate> {
   const user = getStoredUser() || DEMO_FINANCE;
   const now = new Date().toISOString();
@@ -742,22 +747,11 @@ export async function decideEstimateApi(
     return targetEst;
   };
 
-  try {
-    const response = await apiRequest<Estimate>(`/estimates/${estimateId}/decision`, {
-      method: 'PUT',
-      body: payload,
-      signal,
-    });
-    const all = [...getLocalRequests(), ...MOCK_SEED_REQUESTS];
-    for (const r of all) {
-      const d = getLocalRequestDetail(r.id);
-      if (d && (d.estimates?.some((e) => e.id === estimateId) || d.status === 'ESTIMATE_SUBMITTED')) {
-        updateLocal(r.id, d);
-        break;
-      }
+  const syncLocal = async (): Promise<Estimate> => {
+    if (requestId) {
+      const d = getLocalRequestDetail(requestId) || (await getRequestApi(requestId));
+      return updateLocal(requestId, d);
     }
-    return response;
-  } catch {
     const all = [...getLocalRequests(), ...MOCK_SEED_REQUESTS];
     for (const r of all) {
       const d = getLocalRequestDetail(r.id);
@@ -766,8 +760,20 @@ export async function decideEstimateApi(
       }
     }
     const seed = MOCK_SEED_REQUESTS.find((r) => r.status === 'ESTIMATE_SUBMITTED') || MOCK_SEED_REQUESTS[6];
-    const seedDetail = getLocalRequestDetail(seed.id) || await getRequestApi(seed.id);
+    const seedDetail = getLocalRequestDetail(seed.id) || (await getRequestApi(seed.id));
     return updateLocal(seed.id, seedDetail);
+  };
+
+  try {
+    const response = await apiRequest<Estimate>(`/estimates/${estimateId}/decision`, {
+      method: 'PUT',
+      body: payload,
+      signal,
+    });
+    await syncLocal();
+    return response;
+  } catch {
+    return await syncLocal();
   }
 }
 
