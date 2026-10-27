@@ -93,3 +93,4 @@ export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { ApiError } from '../api/client';
+import { ApiError } from '../service/httpclient';
 
 /** DM7: TanStack Query holds all server data. UI state stays in React state or URL params. */
 export function createQueryClient(): QueryClient {

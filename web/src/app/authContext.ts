@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { LoginRequest, Session, User } from '../api/auth';
+import type { LoginRequest, SessionModel as Session, UserModel as User } from '../service/models/auth.models';
 
 export interface AuthContextValue {
   user: User | null;

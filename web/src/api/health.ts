@@ -1,18 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from './client';
-
-/** GET /health. Replace with the generated contract type once contract/openapi.yaml exists. */
-export interface Health {
-  status: 'UP' | 'DEGRADED';
-  database?: 'UP' | 'DOWN';
-  checkedAt?: string;
-}
-
-export const healthKey = ['health'] as const;
-
-export function useHealth() {
-  return useQuery({
-    queryKey: healthKey,
-    queryFn: ({ signal }) => apiRequest<Health>('/health', { signal }),
-  });
-}
+/**
+ * Backward compatibility re-export wrapper.
+ * Canonical health API and hooks now live in src/service/api/health.api and src/hooks/useHealth.
+ */
+export * from '../service/api/health.api';
+export * from '../hooks/useHealth';
+export type { HealthResponse as Health } from '../service/models/health.models';
