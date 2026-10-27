@@ -172,6 +172,29 @@ describe('RequestDetailPage', () => {
     });
   });
 
+  it('shows Approve and Reject buttons for Finance even when estimates array is empty', async () => {
+    const finance: requestsApi.User = {
+      id: 'f1',
+      email: 'finance@genie.test',
+      displayName: 'Chioma Finance',
+      role: 'FINANCE',
+    };
+
+    const emptyEstimateDetail: requestsApi.RequestDetail = {
+      ...mockDetail,
+      status: 'ESTIMATE_SUBMITTED',
+      estimates: [],
+    };
+    vi.spyOn(requestsApi, 'getRequestApi').mockResolvedValue(emptyEstimateDetail);
+
+    renderRequestDetailPage(finance);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /approve estimate/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /reject estimate/i })).toBeInTheDocument();
+    });
+  });
+
   it('shows Complete repair work button for assigned Technician at IN_PROGRESS status', async () => {
     const tech: requestsApi.User = {
       id: 't1',
