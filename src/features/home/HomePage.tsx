@@ -1,11 +1,11 @@
 /** Placeholder home: proves the app, the API client and TanStack Query are wired to the service or mock. */
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { getRoleHomePath } from "../../api/auth";
-import { useAuth } from "../../app/authContext";
+import { getRoleHomePath } from "../../service/api/auth.api";
+import { useAuth } from "../../hooks/useAuth";
 import { GenieLogo } from "../../components/GenieLogo";
 import { LoginModal } from "../../components/LoginModal";
-import { useHealth } from "../../api/health";
+import { useHealth } from "../../hooks/useHealth";
 
 export function HomePage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
