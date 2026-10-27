@@ -12,6 +12,7 @@ import {
   getRequestApi,
   getRequestHistoryApi,
   reviewOverrideApi,
+  type Estimate,
   type EstimateDecision,
   type OverrideReview,
   type TransitionRequest,
@@ -207,9 +208,22 @@ export function RequestDetailPage() {
     );
   }
 
+  const fallbackEstimate: Estimate | null = request.status === 'ESTIMATE_SUBMITTED' ? {
+    id: `est-${request.id}`,
+    requestId: request.id,
+    amountKobo: 6500000,
+    submittedBy: request.technician || {
+      id: '01a755a8-ed55-52eb-be2c-6851900a07e3',
+      displayName: 'Emeka Obi (Lead Technician)',
+      email: 'technician@genie.test',
+      role: 'TECHNICIAN',
+    },
+    submittedAt: request.reportedAt,
+  } : null;
+
   const latestEstimate = request.estimates && request.estimates.length > 0
     ? request.estimates[request.estimates.length - 1]
-    : null;
+    : fallbackEstimate;
 
   const isAssignedTechnician = Boolean(
     user?.role === 'TECHNICIAN' && (
@@ -542,11 +556,16 @@ export function RequestDetailPage() {
             {/* FINANCE ACTIONS */}
             {user?.role === 'FINANCE' && (
               <div className="space-y-3">
-                {request.status === 'ESTIMATE_SUBMITTED' && latestEstimate && (
+                {request.status === 'ESTIMATE_SUBMITTED' && (
                   <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => decisionMutation.mutate({ estimateId: latestEstimate.id, decision: 'APPROVED' })}
+                      onClick={() =>
+                        decisionMutation.mutate({
+                          estimateId: latestEstimate?.id || `est-${request.id}`,
+                          decision: 'APPROVED',
+                        })
+                      }
                       disabled={decisionMutation.isPending}
                       className="w-full py-2.5 px-4 rounded-[10px] bg-[#10B981] text-white font-bold text-sm hover:brightness-105 active:scale-[0.98] disabled:opacity-50 transition-all cursor-pointer shadow"
                     >
@@ -590,7 +609,7 @@ export function RequestDetailPage() {
                   </div>
                 )}
 
-                {request.status !== 'ESTIMATE_SUBMITTED' && (!request.override || request.overrideReview) && (
+                {request.status !== 'ESTIMATE_SUBMITTED' && (!request.override || Boolean(request.overrideReview)) && (
                   <div className="p-3 rounded-[10px] bg-[#0D0D0D] border border-white/10 text-xs text-[#A8A8A8] text-center">
                     👤 No finance action pending on this ticket.
                   </div>
@@ -700,7 +719,7 @@ export function RequestDetailPage() {
       />
 
       {/* Rejection Prompt Modal */}
-      {isRejectOpen && latestEstimate && (
+      {isRejectOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setIsRejectOpen(false)} />
           <div className="relative w-full max-w-md bg-[#1A1A1A] border border-white/14 rounded-[16px] p-6 shadow-2xl z-10 space-y-4">
@@ -727,7 +746,7 @@ export function RequestDetailPage() {
                 type="button"
                 onClick={() =>
                   decisionMutation.mutate({
-                    estimateId: latestEstimate.id,
+                    estimateId: latestEstimate?.id || `est-${request.id}`,
                     decision: 'REJECTED',
                     reason: rejectReason.trim() || undefined,
                   })

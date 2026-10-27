@@ -14,8 +14,9 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - **Auth & Role Routing Fix (`56a367c`)**: Added credentials-to-role resolution for demo/mock logins so Manager (`/requests`), Technician (`/my-jobs`), Finance (`/approvals`), and Employee (`/requests/new`) redirect to their respective landing pages, and persist user role across browser reloads.
   - **Mock Fault Persistence & Seed Data (`e2134e2`)**: Stored newly submitted faults in local storage during mock mode so they immediately appear at the top of the Manager's `/requests` list, and supplied realistic seed requests (`GEN-001` through `GEN-031`) matching database seed data.
   - **Technician Assigned Jobs & Manager Filter (`918d6c0`)**: Mapped canonical user profile UUIDs on demo logins so technician user IDs match database assignments, enabled case-insensitive ID & email matching for technician filters and detail actions, deduplicated local mock requests with seed items, and added a technician filter dropdown for Managers on `/requests`.
+  - **Finance Role Actions & Seed Estimates Fix**: Fixed blank/empty Role Actions area on the request detail page when logged in as Finance. Added realistic seed estimates (`MOCK_SEED_ESTIMATES`) for all demo requests (e.g. `GEN-011` through `GEN-015`), added fallback estimate creation for any `ESTIMATE_SUBMITTED` request, decoupled the Finance Approve/Reject action buttons and Reject modal from requiring pre-existing non-null estimates, added mock mode persistence for `decideEstimateApi` (`APPROVED` -> `ESTIMATE_APPROVED`, `REJECTED` -> `ASSIGNED`) and `reviewOverrideApi`, and added unit test coverage (48 Vitest tests green).
 - **Verification Status:**
-  - 47/47 Vitest tests green across 6 test suites (`requests`, `AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
+  - 48/48 Vitest tests green across 6 test suites (`requests`, `AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
   - ESLint passing with 0 errors and 0 warnings.
   - TypeScript checking (`tsc --noEmit`) passing with 0 errors.
   - Vite production build passing with 0 errors.
@@ -24,9 +25,10 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - Web development server can be previewed locally with `npm run dev` in `genie/web` (port 5173).
   - Works against both Prism mock (`http://127.0.0.1:4711`) and live Render backend (`https://genie-t2s5.onrender.com/api/v1`).
 - **Next Actions:**
-  1. User tests and verifies screens on localhost (`http://localhost:5173`).
-  2. When user explicitly approves, push feature branch and create pull request.
-- **Waiting on:** User review on localhost before pushing or opening PR.
+  1. User tests and verifies all role flows and screens on localhost (`http://localhost:5173`).
+  2. Rebase `feat/request-detail-screen` onto latest `origin/main` (`14a4cb9`), reconcile with DM16 service structure, and verify CI checks.
+  3. Push feature branch and open PR when user explicitly confirms.
+- **Waiting on:** User review on localhost before rebasing and pushing.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -108,3 +110,14 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Built Request List screen on `feat/request-list-screen`: responsive semantic table with sticky headers per modern-web-guidance, mobile stacked card view matching `All requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`). 7 Vitest tests green.
   - Built Request Detail & Role Actions on `feat/request-detail-screen`: facts card, formatted Nigerian Naira currency arithmetic, role-specific action bar following `Role actions.png`, light-dismiss dialog modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`, and rejection prompt), and status audit history timeline. 7 Vitest tests green.
   - All 38 unit tests pass cleanly, ESLint passes with 0 errors and 0 warnings, TypeScript compiles with 0 errors, and production build succeeds. Created `docs/screen-decisions.md`. Kept commits local per user instructions ("test on local host first, commit only, create PR when explicitly asked").
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Resumed Genie ("lets work on genie, first give me a sitrep"). Checked GitHub and the live site, read-only:
+  - `main` is `14a4cb9` (PR #11, Isaac's request-ID logging and timing-safe login, plus his confirmation of contract 0.1.0).
+  - CI and Deploy are green at 16:05; the live service `genie-t2s5.onrender.com` is UP at `14a4cb9`, and `manager@genie.test` signs in as MANAGER.
+  - The live web `genie-sigma-two.vercel.app` is public and calls `…/api/v1`.
+  - The four screen branches are local only (11 commits on `feat/request-detail-screen`, based on `fb1542c`) and **conflict** with `origin/main` in 6 files: `sdlc/WORKLOG.md`, `web/src/api/auth.ts`, `web/src/api/client.ts`, `web/src/app/auth.tsx`, `web/src/components/GenieLogo.tsx`, `web/tsconfig.tsbuildinfo`.
+  - The `production` environment has no required reviewer. PR #6 (evidence, do not merge) is open.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Verified all 47 Vitest tests, ESLint, TypeScript check, and Vite production build clean. Confirmed local dev server (port 5173) and Prism mock server (port 4711) running. User opted to test locally on `http://localhost:5173` before rebasing onto `origin/main`.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed empty Role Actions area for Finance role on the request detail page: added realistic seed estimates matching database migrations, added fallback estimate synthesis on `ESTIMATE_SUBMITTED` tickets, decoupled Finance action buttons from requiring pre-existing estimate objects, enabled mock state persistence for estimate decisions (`APPROVED`, `REJECTED`) and urgent override reviews (`ACCEPTED`, `FLAGGED`), and added unit test in `RequestDetailPage.test.tsx`. All 48 Vitest tests green, lint and typecheck clean, production build passing.
+
+
+
