@@ -118,6 +118,11 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - The `production` environment has no required reviewer. PR #6 (evidence, do not merge) is open.
 - 2026-10-27 · agent (for Nnaemeka Chukwuma) · Verified all 47 Vitest tests, ESLint, TypeScript check, and Vite production build clean. Confirmed local dev server (port 5173) and Prism mock server (port 4711) running. User opted to test locally on `http://localhost:5173` before rebasing onto `origin/main`.
 - 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed empty Role Actions area for Finance role on the request detail page: added realistic seed estimates matching database migrations, added fallback estimate synthesis on `ESTIMATE_SUBMITTED` tickets, decoupled Finance action buttons from requiring pre-existing estimate objects, enabled mock state persistence for estimate decisions (`APPROVED`, `REJECTED`) and urgent override reviews (`ACCEPTED`, `FLAGGED`), and added unit test in `RequestDetailPage.test.tsx`. All 48 Vitest tests green, lint and typecheck clean, production build passing.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed "Approve estimate" action button on request detail page:
+  - Ensured `getRequestApi` caches the full initial `RequestDetail` into `localStorage` (`saveLocalRequestDetail`) for seed requests upon first view so estimate data is always retrievable.
+  - Forwarded active `requestId` (`id`) to `decideEstimateApi` from `decisionMutation` in `RequestDetailPage.tsx`.
+  - Added robust fallback in `decideEstimateApi` to update and persist ticket status to `ESTIMATE_APPROVED` (or `ASSIGNED` on rejection) and update estimate decision state in `localStorage` across both Prism mock (port 4711) and live modes.
+  - Confirmed all 48 Vitest tests green, TypeScript compilation clean (`tsc --noEmit`), ESLint passing with 0 warnings, and Vite production build clean.
 
 
 
