@@ -13,6 +13,10 @@ web/test-results/
 web/coverage/
 *.tsbuildinfo
 web/screen/
+/design/
+design/
+screen/
+
 
 # Environment and secrets (never commit)
 .env

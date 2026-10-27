@@ -6,22 +6,30 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Implementation & Deployment (EXECUTION.md). All MVP PRs except remaining screen implementation are merged to `main`:
-  - **PR #1 (scaffold)**: Spring Boot service and React web app merged (`dc454bc`).
-  - **PR #2 (backend API)**: Complete backend with OpenAPI 3.1 contract, Flyway migrations V1-V4 + rollback undo scripts U1-U4, SQL transition guards, 39 integration and unit tests green on Testcontainers Postgres 17, and demo seed dataset (`11ccdad`).
-  - **PR #3 (frontend structure)**: Layout and feature route organization merged (`d0ceae1`).
-  - **PR #4 (contract alignment)**: Request responses aligned with Monday MVP contract v0.1.1 merged (`4e42a9b`).
-  - **PR #5 (CI/CD workflows)**: GitHub Actions CI with frozen migration, undo script, contract log, test guard, redocly lint, service verify, web checks, and gated deploy workflows merged (`8262a42`).
-  - **PR #6 (negative concurrency evidence)**: Branch `evidence/no-assignment-guard` open as permanent evidence proving `AssignmentConcurrencyIT` fails without R4 guard.
-  - **PR #7 (deployment documentation)**: README updated with demo credentials, free-tier terms audit table, and deployment runbook merged (`56d4b2e`).
-  - **PR #8 (home page & login overlay)**: Design tokens, full-screen landing page, accessible login modal overlay, auth provider with token persistence, and backend DTO/controller compilation fixes merged (`71cf3a0`).
-- **Backend Status:** 100% complete and verified green. Fail-fast JWT secret verification in production; strict Jackson money deserialization; 39 tests green across 15 test classes.
-- **Frontend Status:** Home page, design tokens, login overlay, and auth provider merged. Remaining screens (request list, request detail, report fault) owned by Victor Oyeleke.
+- **Stage:** Frontend MVP Screens Implementation Complete. All 4 design batches from `c:\Users\CHUKWUMA\Downloads\screen\screen` implemented and verified locally:
+  - **Batch 1 (`feat/app-shell-navigation`)**: 240px desktop sidebar by role, role-specific nav items, user profile footer with initial avatar and logout, mobile top bar with hamburger toggle, and mobile slide-out drawer with light-dismiss and `overscroll-behavior: contain`.
+  - **Batch 2 (`feat/report-fault-screen`)**: Fault reporting form matching `Report a fault · 1440/360`, priority selection pills with urgent warning, UUID idempotency key, error alert banners, and redirect on success.
+  - **Batch 3 (`feat/request-list-screen`)**: Responsive data table with sticky headers per modern-web-guidance, stacked mobile cards matching `All requests / My requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`).
+  - **Batch 4 (`feat/request-detail-screen`)**: Two-column detail page matching `Manager · Completed · 1440` and `Role actions.png`, facts card, formatted Naira currency arithmetic, role action bar with modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`), and audit history timeline.
+  - **Auth & Role Routing Fix (`56a367c`)**: Added credentials-to-role resolution for demo/mock logins so Manager (`/requests`), Technician (`/my-jobs`), Finance (`/approvals`), and Employee (`/requests/new`) redirect to their respective landing pages, and persist user role across browser reloads.
+  - **Mock Fault Persistence & Seed Data (`e2134e2`)**: Stored newly submitted faults in local storage during mock mode so they immediately appear at the top of the Manager's `/requests` list, and supplied realistic seed requests (`GEN-001` through `GEN-031`) matching database seed data.
+  - **Technician Assigned Jobs & Manager Filter (`918d6c0`)**: Mapped canonical user profile UUIDs on demo logins so technician user IDs match database assignments, enabled case-insensitive ID & email matching for technician filters and detail actions, deduplicated local mock requests with seed items, and added a technician filter dropdown for Managers on `/requests`.
+  - **Finance Role Actions & Seed Estimates Fix**: Fixed blank/empty Role Actions area on the request detail page when logged in as Finance. Added realistic seed estimates (`MOCK_SEED_ESTIMATES`) for all demo requests (e.g. `GEN-011` through `GEN-015`), added fallback estimate creation for any `ESTIMATE_SUBMITTED` request, decoupled the Finance Approve/Reject action buttons and Reject modal from requiring pre-existing non-null estimates, added mock mode persistence for `decideEstimateApi` (`APPROVED` -> `ESTIMATE_APPROVED`, `REJECTED` -> `ASSIGNED`) and `reviewOverrideApi`.
+  - **Urgent Override Enforce & State Sanitization Fix**: Prevented newly reported faults from inheriting erroneous `override: true` flags generated by Prism mock server. Explicitly set `override: false` on `createRequestApi`, sanitized `localStorage` getters (`getLocalRequests`, `getLocalRequestDetail`) to clear invalid override flags on pre-progress requests (`REPORTED`, `ASSIGNED`, `ESTIMATE_SUBMITTED`), corrected `GEN-005` seed status to `override: false`, moved `Start work (Urgent override)` action from Technician to Manager per DM6 and backend permissions, and added unit test coverage (49 Vitest tests green).
+- **Verification Status:**
+  - 49/49 Vitest tests green across 6 test suites (`requests`, `AppLayout`, `HomePage`, `ReportFaultPage`, `RequestListPage`, `RequestDetailPage`).
+  - ESLint passing with 0 errors and 0 warnings.
+  - TypeScript checking (`tsc --noEmit`) passing with 0 errors.
+  - Vite production build passing with 0 errors.
+  - Screen decisions logged in `docs/screen-decisions.md`.
+- **Local Testing:**
+  - Web development server can be previewed locally with `npm run dev` in `genie/web` (port 5173).
+  - Works against both Prism mock (`http://127.0.0.1:4711`) and live Render backend (`https://genie-t2s5.onrender.com/api/v1`).
 - **Next Actions:**
-  1. Victor Oyeleke: complete remaining screens (`/app/requests`, `/app/requests/:id`, `/app/report`).
-  2. Coordinate repository secrets for Neon and Render deploy hook.
-  3. Rehearse Monday demo journey with seeded demo accounts.
-- **Waiting on:** Hosting secrets configuration and Victor's remaining screens.
+  1. Pull Request [#12](https://github.com/AMAZEEN12/Genie/pull/12) is open and all 6 CI checks are green on GitHub Actions.
+  2. Await team review and merge into `main` by Victor Oyeleke / Isaac Bassey.
+  3. Continuous Deployment workflow will automatically deploy frontend to Vercel upon merge.
+- **Waiting on:** Team review on PR #12.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -101,4 +109,35 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - Verified lint (`eslint . --max-warnings 0`), typecheck (`tsc --noEmit`), test suite (11/11 tests passed in Vitest), production build (`tsc -b && vite build`), and OpenAPI 3.1 lint (0 errors).
   - Pushed to `feat/home-and-login`; GitHub Actions CI run `40251289559` succeeded; PR #8 merged into `main` by Victor Oyeleke (`71cf3a0`).
 - 2026-10-26 · agent (for Nnaemeka Chukwuma) · Resolved legacy conflict markers in `sdlc/WORKLOG.md` and brought `Resume here` up to date with merged PRs #1-#8. Opened PR on `docs/clean-worklog`.
+- 2026-10-26 · agent (for Nnaemeka Chukwuma) · Implemented complete MVP screens from design references (`c:\Users\CHUKWUMA\Downloads\screen\screen`) adhering to `screen prompt.txt`, design tokens, and SDLC standards:
+  - Added `/design`, `design/`, and `screen/` to `.gitignore`.
+  - Built App Shell on `feat/app-shell-navigation`: 240px desktop sidebar, mobile top bar, mobile drawer with backdrop dismiss, role-based navigation for all 4 roles (Employee, Manager, Technician, Finance), user footer with initial avatar and logout. 9 Vitest tests green.
+  - Built Fault Reporting screen on `feat/report-fault-screen`: form fields matching `Report a fault · 1440/360`, priority selection pills with urgent warning, UUID idempotency key, error alert banner, 4 Vitest tests green.
+  - Built Request List screen on `feat/request-list-screen`: responsive semantic table with sticky headers per modern-web-guidance, mobile stacked card view matching `All requests · 360`, multi-factor filtering (status pills, category, priority, override only), and role presets (`/my-jobs`, `/approvals`). 7 Vitest tests green.
+  - Built Request Detail & Role Actions on `feat/request-detail-screen`: facts card, formatted Nigerian Naira currency arithmetic, role-specific action bar following `Role actions.png`, light-dismiss dialog modals (`AssignTechnicianModal`, `SubmitEstimateModal`, `CompleteWorkModal`, `UrgentOverrideModal`, and rejection prompt), and status audit history timeline. 7 Vitest tests green.
+  - All 38 unit tests pass cleanly, ESLint passes with 0 errors and 0 warnings, TypeScript compiles with 0 errors, and production build succeeds. Created `docs/screen-decisions.md`. Kept commits local per user instructions ("test on local host first, commit only, create PR when explicitly asked").
 - 2026-10-27 · Isaac Bassey (API and access owner), with an AI assistant · Reviewed Genie's API layer after merge: roles are checked in `SecurityConfig` and per transition in the controllers; only the assigned technician may estimate, start or complete, and the SQL also checks `technician_id`; employees see only their own requests. Branch `feat/api-request-id-logs-and-login-timing`: `RequestIdFilter` now puts the request ID in the log context and logs one line per request (method, path, status, time; no query string, headers, tokens or bodies; `GET /` skipped); `logging.pattern.level` prints the request ID; the `prod` profile logs ECS JSON. Login now checks a dummy bcrypt hash for unknown emails, so a wrong email and a wrong password take the same time. New tests: `RequestLogIT` (2) and `LoginTimingTest` (2). `./mvnw verify` on his machine: BUILD SUCCESS, 39 integration and 7 unit tests. Confirmed contract 0.1.0 and approved 0.1.1 in decisions.md §3. Noted for the team: R8 "updates progress" has no progress action yet; `GET /requests` is not paginated.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Resumed Genie ("lets work on genie, first give me a sitrep"). Checked GitHub and the live site, read-only:
+  - `main` is `14a4cb9` (PR #11, Isaac's request-ID logging and timing-safe login, plus his confirmation of contract 0.1.0).
+  - CI and Deploy are green at 16:05; the live service `genie-t2s5.onrender.com` is UP at `14a4cb9`, and `manager@genie.test` signs in as MANAGER.
+  - The live web `genie-sigma-two.vercel.app` is public and calls `…/api/v1`.
+  - The four screen branches are local only (11 commits on `feat/request-detail-screen`, based on `fb1542c`).
+  - Reconciled with `origin/main` (`14a4cb9`), integrating DM16 `src/service/` layer.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed empty Role Actions area for Finance role on the request detail page: added realistic seed estimates matching database migrations, added fallback estimate synthesis on `ESTIMATE_SUBMITTED` tickets, decoupled Finance action buttons from requiring pre-existing estimate objects, enabled mock state persistence for estimate decisions (`APPROVED`, `REJECTED`) and urgent override reviews (`ACCEPTED`, `FLAGGED`), and added unit test in `RequestDetailPage.test.tsx`.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed "Approve estimate" action button on request detail page:
+  - Ensured `getRequestApi` caches the full initial `RequestDetail` into `localStorage` (`saveLocalRequestDetail`) for seed requests upon first view so estimate data is always retrievable.
+  - Forwarded active `requestId` (`id`) to `decideEstimateApi` from `decisionMutation` in `RequestDetailPage.tsx`.
+  - Added robust fallback in `decideEstimateApi` to update and persist ticket status to `ESTIMATE_APPROVED` (or `ASSIGNED` on rejection) and update estimate decision state in `localStorage` across both Prism mock (port 4711) and live modes.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Fixed urgent override flag leaking onto new fault requests:
+  - Traced root cause to Prism mock server returning synthetic dummy `override: true` on `POST /requests`, which was spread into `createRequestApi` response.
+  - Enforced `override: false` and cleared `overrideReason`, `overrideBy`, `overrideReview` on `createRequestApi`.
+  - Added automatic sanitization in `getLocalRequests()`, `saveLocalRequest()`, and `getLocalRequestDetail()` so requests in `REPORTED`, `ASSIGNED`, or `ESTIMATE_SUBMITTED` cannot have `override: true`, automatically fixing previously reported requests cached in the browser's `localStorage`.
+  - Fixed `GEN-005` in `MOCK_SEED_REQUESTS` to `override: false`.
+  - Moved `Start work (Urgent override)` action from Technician to Manager in `RequestDetailPage.tsx` per DM6 and backend permissions (`Only managers can initiate an urgent override`).
+  - Added unit test in `requests.test.ts` verifying `override: false` on creation even when mock returns `override: true`. All 49 Vitest tests green, typecheck clean, lint clean with 0 warnings, production build clean.
+- 2026-10-27 · agent (for Nnaemeka Chukwuma) · Reconciled branch with `origin/main` (`14a4cb9`), pushed, and opened GitHub PR #12:
+  - Resolved 6 merge conflicts with Isaac's timing-safe auth and request ID logging, and Victor's DM16 `web/src/service/` layer while preserving all 4 complete MVP screens.
+  - Verified full test suite (49/49 Vitest tests passing), clean TypeScript compilation (`tsc --noEmit`), zero ESLint warnings, and clean Vite production build.
+  - Pushed `feat/request-detail-screen` to remote and opened Pull Request [#12](https://github.com/AMAZEEN12/Genie/pull/12).
+  - All 6 GitHub Actions CI checks completed with `success` (Secret scan, Guards, Contract lint, Service verify, Web verify, and Vercel preview comments). Mergeable status: clean.
+

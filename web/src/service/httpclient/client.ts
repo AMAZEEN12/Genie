@@ -4,6 +4,10 @@
  * Non-2xx responses are mapped to ApiError with RFC 9457 Problem details.
  */
 
+import type { UserModel as User } from '../models/auth.models';
+
+export type { User };
+
 export interface Problem {
   type?: string;
   title?: string;
@@ -43,6 +47,29 @@ export function setStoredToken(token: string | null): void {
     }
   } catch {
     // Ignore storage errors (e.g. private browsing restrictions)
+  }
+}
+
+export const USER_STORAGE_KEY = 'genie_user';
+
+export function getStoredUser(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: User | null): void {
+  try {
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
   }
 }
 

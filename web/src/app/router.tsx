@@ -1,5 +1,8 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
 import { HomePage } from '../features/home/HomePage';
+import { ReportFaultPage } from '../features/requests/ReportFaultPage';
+import { RequestListPage } from '../features/requests/RequestListPage';
+import { RequestDetailPage } from '../features/requests/RequestDetailPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
@@ -10,6 +13,17 @@ export const routes: RouteObject[] = [
     Component: AppLayout,
     children: [
       { index: true, Component: HomePage },
+      { path: 'requests', Component: RequestListPage },
+      { path: 'requests/new', Component: ReportFaultPage },
+      { path: 'requests/:id', Component: RequestDetailPage },
+      {
+        path: 'my-jobs',
+        Component: () => <RequestListPage preset="my-jobs" />,
+      },
+      {
+        path: 'approvals',
+        Component: () => <RequestListPage preset="approvals" />,
+      },
       { path: '*', Component: NotFoundPage },
     ],
   },
