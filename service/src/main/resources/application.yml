@@ -42,6 +42,9 @@ logging:
   level:
     root: INFO
     ng.tesa.genie: INFO
+  pattern:
+    # Every log line shows the request ID (set by RequestIdFilter), so one journey can be followed.
+    level: "%5p [%X{requestId:-}]"
 
 ---
 spring:
@@ -73,3 +76,8 @@ server:
   error:
     include-stacktrace: never
     include-message: never
+logging:
+  structured:
+    format:
+      # Structured JSON logs on the hosts. ECS adds every MDC value, so each line has "requestId".
+      console: ecs
