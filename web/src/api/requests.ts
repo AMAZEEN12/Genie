@@ -221,7 +221,7 @@ const MOCK_SEED_REQUESTS: Array<RequestSummary & Partial<RequestDetail>> = [
     status: 'REPORTED',
     reportedBy: DEMO_EMPLOYEE,
     reportedAt: '2026-10-23T10:00:00Z',
-    override: true,
+    override: false,
     version: 1,
   },
   {
@@ -331,7 +331,15 @@ const MOCK_SEED_REQUESTS: Array<RequestSummary & Partial<RequestDetail>> = [
 export function getLocalRequests(): RequestSummary[] {
   try {
     const raw = localStorage.getItem(LOCAL_REQUESTS_KEY);
-    return raw ? (JSON.parse(raw) as RequestSummary[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as RequestSummary[];
+    return parsed.map((item) => {
+      // In REPORTED, ASSIGNED, or ESTIMATE_SUBMITTED statuses, work has not begun, so override cannot be active
+      if (item.status === 'REPORTED' || item.status === 'ASSIGNED' || item.status === 'ESTIMATE_SUBMITTED') {
+        return { ...item, override: false };
+      }
+      return item;
+    });
   } catch {
     return [];
   }
@@ -340,6 +348,8 @@ export function getLocalRequests(): RequestSummary[] {
 export function saveLocalRequest(req: RequestSummary | RequestDetail): void {
   try {
     const existing = getLocalRequests();
+    const isReportedOrPreProgress =
+      req.status === 'REPORTED' || req.status === 'ASSIGNED' || req.status === 'ESTIMATE_SUBMITTED';
     const summary: RequestSummary = {
       id: req.id,
       reference: req.reference,
@@ -354,7 +364,7 @@ export function saveLocalRequest(req: RequestSummary | RequestDetail): void {
       reportedAt: req.reportedAt,
       technician: req.technician,
       deadline: req.deadline,
-      override: req.override,
+      override: isReportedOrPreProgress ? false : Boolean(req.override),
       version: req.version,
     };
     const filtered = existing.filter((r) => r.id !== req.id && r.reference !== req.reference);
@@ -367,7 +377,20 @@ export function saveLocalRequest(req: RequestSummary | RequestDetail): void {
 export function getLocalRequestDetail(id: string): RequestDetail | null {
   try {
     const raw = localStorage.getItem(`${LOCAL_DETAILS_KEY}_${id}`);
-    return raw ? (JSON.parse(raw) as RequestDetail) : null;
+    if (!raw) return null;
+    const detail = JSON.parse(raw) as RequestDetail;
+    if (detail.status === 'REPORTED' || detail.status === 'ASSIGNED' || detail.status === 'ESTIMATE_SUBMITTED') {
+      return {
+        ...detail,
+        override: false,
+        overrideReason: undefined,
+        overrideBy: undefined,
+        overrideReview: undefined,
+        overrideReviewedBy: undefined,
+        overrideReviewNote: undefined,
+      };
+    }
+    return detail;
   } catch {
     return null;
   }
@@ -419,6 +442,12 @@ export async function createRequestApi(
     reportedAt,
     version: 1,
     estimates: [],
+    override: false,
+    overrideReason: undefined,
+    overrideBy: undefined,
+    overrideReview: undefined,
+    overrideReviewedBy: undefined,
+    overrideReviewNote: undefined,
     history: [
       {
         id: crypto.randomUUID(),
@@ -783,22 +812,28 @@ export async function applyTransitionApi(
   payload: TransitionRequest,
   signal?: AbortSignal,
 ): Promise<RequestDetail> {
-  const response = await apiRequest<RequestDetail>(`/requests/${id}/transitions`, {
-    method: 'POST',
-    body: payload,
-    signal,
-  });
+  const user = getStoredUser() || DEMO_MANAGER;
 
-  const isMock = response.reference === 'string' || response.title === 'string';
-  if (isMock) {
+  const updateLocal = async (): Promise<RequestDetail> => {
     const current = getLocalRequestDetail(id) || (await getRequestApi(id));
     let nextStatus: RequestStatus = current.status;
     let workDone = current.workDone;
     let actualCostKobo = current.actualCostKobo;
     let completedOn = current.completedOn;
+    let override = current.override;
+    let overrideReason = current.overrideReason;
+    let overrideBy = current.overrideBy;
+
+    const isOverride = payload.type === 'OverrideStartTransitionRequest';
 
     if (payload.type === 'StartTransitionRequest' || payload.type === 'OverrideStartTransitionRequest') {
       nextStatus = 'IN_PROGRESS';
+      if (payload.type === 'OverrideStartTransitionRequest') {
+        override = true;
+        overrideReason =
+          payload.reason || 'Urgent equipment breakdown requiring immediate containment.';
+        overrideBy = user;
+      }
     } else if (payload.type === 'CompleteTransitionRequest') {
       nextStatus = 'COMPLETED';
       workDone = payload.workDone;
@@ -814,13 +849,49 @@ export async function applyTransitionApi(
       workDone,
       actualCostKobo,
       completedOn,
+      override,
+      overrideReason,
+      overrideBy,
       version: (current.version || 1) + 1,
+      history: [
+        ...(current.history || []),
+        {
+          id: crypto.randomUUID(),
+          requestId: id,
+          fromStatus: current.status,
+          toStatus: nextStatus,
+          actor: user,
+          note: isOverride
+            ? `Urgent override started: ${overrideReason}`
+            : `Status changed from ${current.status} to ${nextStatus}`,
+          at: new Date().toISOString(),
+        },
+      ],
     };
     saveLocalRequestDetail(updated);
     return updated;
-  }
+  };
 
-  return response;
+  let wireType: string = payload.type;
+  if (wireType === 'StartTransitionRequest') wireType = 'START';
+  if (wireType === 'OverrideStartTransitionRequest') wireType = 'OVERRIDE_START';
+  if (wireType === 'CompleteTransitionRequest') wireType = 'COMPLETE';
+  if (wireType === 'VerifyTransitionRequest') wireType = 'VERIFY';
+
+  try {
+    const response = await apiRequest<RequestDetail>(`/requests/${id}/transitions`, {
+      method: 'POST',
+      body: { ...payload, type: wireType },
+      signal,
+    });
+    const isMock = response.reference === 'string' || response.title === 'string';
+    if (isMock) {
+      return await updateLocal();
+    }
+    return response;
+  } catch {
+    return await updateLocal();
+  }
 }
 
 /** Review an urgent override - ACCEPTED or FLAGGED (PUT /requests/{id}/override-review) */

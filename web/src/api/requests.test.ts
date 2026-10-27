@@ -120,6 +120,7 @@ describe('requests API & mock persistence layer', () => {
     expect(created.title).toBe('Water pipe leaking in server room');
     expect(created.status).toBe('REPORTED');
     expect(created.reference).toMatch(/^GEN-/);
+    expect(created.override).toBe(false);
 
     // Now query listRequestsApi as a Manager
     const list = await listRequestsApi({ status: 'REPORTED' });
@@ -127,6 +128,62 @@ describe('requests API & mock persistence layer', () => {
     // Newly created fault should be at the very top of the list!
     expect(list[0].title).toBe('Water pipe leaking in server room');
     expect(list[0].status).toBe('REPORTED');
+    expect(list[0].override).toBe(false);
+  });
+
+  it('guarantees override is false for new requests even if the server mock returns override: true', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: '497f6eca-6276-4993-bfeb-53cbbbba6f08',
+                reference: 'string',
+                title: 'string',
+                building: 'string',
+                location: 'string',
+                equipment: 'string',
+                category: 'string',
+                priority: 'URGENT',
+                status: 'REPORTED',
+                reportedBy: {
+                  id: '497f6eca-6276-4993-bfeb-53cbbbba6f08',
+                  email: 'user@example.com',
+                  displayName: 'string',
+                  role: 'EMPLOYEE',
+                },
+                reportedAt: '2019-08-24T14:15:22Z',
+                override: true, // Prism returns dummy true
+                version: 1,
+              }),
+              { status: 201, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        );
+      }),
+    );
+
+    const created = await createRequestApi({
+      title: 'Cooling breakdown',
+      building: 'Tech Block',
+      location: 'Server Room',
+      equipment: 'AC',
+      category: 'HVAC & Cooling',
+      priority: 'URGENT',
+      description: 'Chiller down',
+    });
+
+    expect(created.status).toBe('REPORTED');
+    expect(created.override).toBe(false);
+    expect(created.overrideReason).toBeUndefined();
+
+    const storedList = getLocalRequests();
+    expect(storedList[0].override).toBe(false);
   });
 
   it('provides demo technicians in mock mode', async () => {

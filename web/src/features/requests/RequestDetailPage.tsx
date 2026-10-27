@@ -481,6 +481,18 @@ export function RequestDetailPage() {
                   </button>
                 )}
 
+                {/* Urgent Override: Manager bypasses finance pre-approval for urgent breakdowns */}
+                {request.priority === 'URGENT' &&
+                  (request.status === 'ASSIGNED' || request.status === 'ESTIMATE_SUBMITTED') && (
+                    <button
+                      type="button"
+                      onClick={() => setIsOverrideOpen(true)}
+                      className="w-full py-2.5 px-4 rounded-[10px] border border-[#FF6B5E] text-[#FF6B5E] hover:bg-[#FF6B5E]/10 font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      Start work (Urgent override)
+                    </button>
+                  )}
+
                 {request.status === 'COMPLETED' && (
                   <button
                     type="button"
@@ -492,11 +504,16 @@ export function RequestDetailPage() {
                   </button>
                 )}
 
-                {request.status !== 'REPORTED' && request.status !== 'COMPLETED' && (
-                  <div className="p-3 rounded-[10px] bg-[#0D0D0D] border border-white/10 text-xs text-[#A8A8A8] text-center">
-                    👤 Waiting for {request.status === 'ASSIGNED' ? 'technician estimate' : request.status === 'ESTIMATE_SUBMITTED' ? 'finance decision' : 'work in progress'}…
-                  </div>
-                )}
+                {request.status !== 'REPORTED' &&
+                  request.status !== 'COMPLETED' &&
+                  !(
+                    request.priority === 'URGENT' &&
+                    (request.status === 'ASSIGNED' || request.status === 'ESTIMATE_SUBMITTED')
+                  ) && (
+                    <div className="p-3 rounded-[10px] bg-[#0D0D0D] border border-white/10 text-xs text-[#A8A8A8] text-center">
+                      👤 Waiting for {request.status === 'ASSIGNED' ? 'technician estimate' : request.status === 'ESTIMATE_SUBMITTED' ? 'finance decision' : 'work in progress'}…
+                    </div>
+                  )}
               </div>
             )}
 
@@ -504,24 +521,13 @@ export function RequestDetailPage() {
             {user?.role === 'TECHNICIAN' && (
               <div className="space-y-3">
                 {request.status === 'ASSIGNED' && isAssignedTechnician && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setIsEstimateOpen(true)}
-                      className="w-full py-2.5 px-4 rounded-[10px] bg-[#E1EE04] text-[#0D0D0D] font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer shadow"
-                    >
-                      Submit repair estimate
-                    </button>
-                    {request.priority === 'URGENT' && (
-                      <button
-                        type="button"
-                        onClick={() => setIsOverrideOpen(true)}
-                        className="w-full py-2 px-3 rounded-[10px] border border-[#FF6B5E] text-[#FF6B5E] hover:bg-[#FF6B5E]/10 font-semibold text-xs transition-colors cursor-pointer"
-                      >
-                        Start work (Urgent override)
-                      </button>
-                    )}
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => setIsEstimateOpen(true)}
+                    className="w-full py-2.5 px-4 rounded-[10px] bg-[#E1EE04] text-[#0D0D0D] font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer shadow"
+                  >
+                    Submit repair estimate
+                  </button>
                 )}
 
                 {request.status === 'ESTIMATE_APPROVED' && isAssignedTechnician && (
