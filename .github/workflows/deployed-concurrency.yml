@@ -1,0 +1,32 @@
+# Manual. Runs the R4 race against the DEPLOYED service and keeps the output as an artifact.
+# (deploy.yml declares an input "run_concurrency_test" but has no step that uses it; this workflow does the job.)
+# Needs the repository variable API_URL (already used by deploy.yml), e.g. https://genie-t2s5.onrender.com
+name: Deployed concurrency
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        description: Parallel assignment attempts
+        default: '10'
+permissions:
+  contents: read
+jobs:
+  race:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Run assign-race against the deployed service
+        env:
+          SERVICE_URL: ${{ vars.API_URL }}/api/v1
+        run: |
+          set -o pipefail
+          node load/concurrency/assign-race.mjs --base "${SERVICE_URL}" --n "${{ inputs.n }}" | tee assign-race.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployed-assign-race
+          path: |
+            assign-race.log
+            load/results/*.json

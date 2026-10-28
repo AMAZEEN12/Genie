@@ -4,13 +4,36 @@ Maintenance requests from reported fault to verified repair. TeSA Cohort 6 capst
 
 An employee reports a fault. A manager assigns a technician, who estimates the cost. Finance approves the estimate, the technician completes the job, and the manager verifies it. Every step is recorded with who did it and when. Requirements are in [sdlc/intent.md](sdlc/intent.md), and the design and build order in [sdlc/plan.md](sdlc/plan.md).
 
-> **Status: Backend & Workflows Implemented & Verified.**
-> - Backend API complete with Java 25, Spring Boot 4, JdbcClient, plain SQL status machine, and Flyway migrations (V1-V4) with undo scripts (U1-U4).
-> - 39 tests green across 15 test classes (5 unit tests, 34 integration tests against Testcontainers PostgreSQL 17).
-> - OpenAPI 3.1 specification (`contract/openapi.yaml`) lint clean.
-> - Concurrency guard verified with automated evidence workflow (`evidence/no-assignment-guard`).
-> - Gated CI/CD and deployment workflows configured (`.github/workflows/ci.yml`, `concurrency-evidence.yml`, `deploy.yml`).
+<!-- PASTE these sections into Genie's README.md, directly under the "Status" block. Replace the Status block text too (it still describes only backend + workflows). -->
 
+## Live addresses (official: Stack V)
+| Tier | Address | Checked |
+|------|---------|---------|
+| Interface (Vercel) | https://genie-sigma-two.vercel.app | 2026-10-27 (TODO re-check) |
+| Service (Render) | https://genie-t2s5.onrender.com/api/v1 (health: `/api/v1/health` reports the deployed commit) | 2026-10-27 (TODO re-check) |
+| Database | Neon Postgres (project `genie`), not publicly reachable | |
+
+First request after 15 minutes idle takes about a minute (Render free tier sleeps). Wait for the health check before judging the app.
+
+## What is simulated or not built
+- All users, buildings, equipment, costs and requests are **fictional demonstration data**. No relationship with any real organisation.
+- Not built: photos and receipts (Should), email, downloadable reports, cost analytics, payments, accounting.
+- Logout is client-side only (DM11).
+- TODO before submission: describe here any screen that still falls back to built-in sample data (see `docs/demo-checklist.md`).
+
+## Evidence
+| Claim | Where |
+|-------|-------|
+| Only one of two simultaneous assignments succeeds | `AssignmentConcurrencyIT`; run against the deployed service with `node load/concurrency/assign-race.mjs` |
+| That test fails without the guard | branch `evidence/no-assignment-guard`; workflow `Concurrency evidence`; `docs/rule-removal-log.md` |
+| Wrong role is refused by the service | `AuthorizationIT`; removal recorded in `docs/rule-removal-log.md` |
+| Decisions | `decisions.md`, `docs/decision-records/DR-1`, `DR-2` |
+| AI use and errors found | `docs/ai-log.md` |
+| Deploys and rollbacks | `docs/releases.md` |
+
+## Known limitations
+- `GET /requests` is not paginated. Progress updates (R8 "updates progress") have no dedicated action yet.
+- Free-tier limits: Render sleeps when idle and has 750 instance hours per workspace per month; Neon allows 1 GB and 100 CU-hours per project per month.
 ## Layout
 | Folder | What | Owner |
 |----|----|----|
