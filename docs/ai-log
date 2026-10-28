@@ -1,0 +1,35 @@
+# AI log (Genie)
+
+Required by the brief: tools used, what was asked, what was accepted, what was rejected, and **at least one case where the output was checked and found wrong** (what it claimed, how it was checked, what was true, what was done instead). A log with no errors reads as a log with no checking.
+
+Tools named in the repo history: Codex (DM10, DM11 entries), an AI coding agent used by Nnaemeka Chukwuma (worklog entries "agent for Nnaemeka Chukwuma"), an AI assistant used by Isaac Bassey (worklog 2026-10-27). **Each engineer: add your own rows, with your own words.** Entries below are drafted from `sdlc/WORKLOG.md`; confirm or correct each one with the person who actually did it before submission.
+
+## Log
+| Date | Who | Tool | Asked it to | Accepted | Rejected / changed |
+|------|-----|------|-------------|----------|--------------------|
+| 2026-10-25 | Nnaemeka | AI agent | Implement the backend: contract, migrations V1-V4 with undo scripts, SQL guards, endpoints, integration tests | Guarded-UPDATE design, Testcontainers tests | CONFIRM: see error 1 |
+| 2026-10-25 | Nnaemeka | AI agent | Harden JWT and money parsing | Removed default JWT secret, fail-fast key check, strict Jackson number settings | A committed default JWT secret in `application.yml` was found at handover review and removed |
+| 2026-10-26 | Nnaemeka | AI agent | Build the four MVP screens from the design images | Shell, report form, list, detail with modals | See error 3 |
+| 2026-10-27 | Isaac | AI assistant | Review the API layer; add request-ID logging and timing-safe login | Request-ID in logs, dummy bcrypt check for unknown emails | CONFIRM with Isaac |
+| BLESSING: add your rows | Blessing | | e.g. workflows, README audit, load scripts in `load/` | | |
+
+## Cases where the output was wrong (checked, found wrong)
+Drafted from the worklog. **Verify each against the commit and fill the "how I checked" field honestly.**
+
+### Error 1: wrong Jackson import (commit 3b849e8)
+- Claimed / produced: `RequestSummaryResponse.java` and `RequestDetailResponse.java` imported `tools.jackson.annotation.JsonInclude`.
+- How it was checked: `./mvnw clean test-compile` failed on `feat/home-and-login` (PR #8).
+- What was actually true: Jackson 3 moved most packages to `tools.jackson`, but the annotations package is still `com.fasterxml.jackson.annotation`.
+- What was done instead: imports corrected, `NotFoundException` import added, compile green. CONFIRM the exact error message from the CI log.
+
+### Error 2: per-hook `retry` overrode the shared query policy (2026-10-25)
+- Claimed / produced: scaffold hook with its own `retry` setting.
+- How it was checked: a Vitest test failed (worklog: "one real defect found by the tests").
+- What was actually true: a per-hook option overrides the shared TanStack Query policy.
+- What was done instead: removed it; rule added to `AGENTS.md` "Mistakes to avoid".
+
+### Error 3: mock server's placeholder values leaked into the app (2026-10-27)
+- Claimed / produced: `createRequestApi` spread the Prism response, so new faults got `override: true`.
+- How it was checked: manual run showed a newly reported fault with the urgent-override flag; traced to Prism returning synthetic example values.
+- What was actually true: Prism examples are not real service data. The live service never returns that.
+- What was done instead: `override: false` set explicitly, localStorage sanitised, unit test added. **Open issue:** the same placeholder-detection approach still exists in `web/src/api/requests.ts` (empty live list returns hardcoded seed requests). Decide with Victor whether to remove it before the demo.

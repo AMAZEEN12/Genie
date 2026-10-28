@@ -1,0 +1,67 @@
+[
+  { "id": "01-R4-assignment-guard", "rule": "R4 one assignment at a time", "test": "AssignmentConcurrencyIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestRepository.java",
+        "find": "WHERE id = :id AND status = 'REPORTED' AND version = :expectedVersion",
+        "replace": "WHERE id = :id" } ] },
+  { "id": "02-R1-roles", "rule": "R1 roles enforced in the service", "test": "AuthorizationIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/config/SecurityConfig.java",
+        "find": ".requestMatchers(HttpMethod.PUT, \"/api/v1/requests/*/assignment\").hasRole(\"MANAGER\")",
+        "replace": ".requestMatchers(HttpMethod.PUT, \"/api/v1/requests/*/assignment\").permitAll()" },
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestController.java",
+        "find": "if (user.role() != Role.MANAGER) {\n            throw new ForbiddenException(ErrorCode.FORBIDDEN, \"Only managers can assign technicians.\");",
+        "replace": "if (false) {\n            throw new ForbiddenException(ErrorCode.FORBIDDEN, \"Only managers can assign technicians.\");" } ] },
+  { "id": "03-R3-idempotency", "rule": "R3 create request once", "test": "IdempotencyIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestWorkflowService.java",
+        "find": "var existing = requests.findByIdempotencyKey(idempotencyKey);",
+        "replace": "java.util.Optional<MaintenanceRequest> existing = java.util.Optional.empty();" },
+      { "file": "service/src/main/resources/db/migration/V2__requests.sql",
+        "find": "idempotency_key UUID UNIQUE,", "replace": "idempotency_key UUID," } ] },
+  { "id": "04-R5-self-approval", "rule": "R5 finance cannot approve own submission", "test": "EstimateIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestWorkflowService.java",
+        "find": "if (estimate.submittedBy().id().equals(finance.id())) {", "replace": "if (false) {" },
+      { "file": "service/src/main/resources/db/migration/V3__estimates_history.sql",
+        "find": "decided_by IS NULL OR decided_by <> submitted_by", "replace": "TRUE" } ] },
+  { "id": "05-R6-start-needs-approval", "rule": "R6 no start without approved estimate", "test": "StartWithoutApprovalIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestRepository.java",
+        "find": "WHERE id = :id AND status = 'ESTIMATE_APPROVED' AND technician_id = :technicianId",
+        "replace": "WHERE id = :id AND technician_id = :technicianId" } ] },
+  { "id": "06-R8-close-needs-completion", "rule": "R8 cannot close without completion details", "test": "CloseRulesIT",
+    "edits": [
+      { "file": "service/src/main/resources/db/migration/V2__requests.sql",
+        "find": "work_done IS NOT NULL AND actual_cost_kobo IS NOT NULL AND completed_on IS NOT NULL", "replace": "TRUE" } ] },
+  { "id": "07-R9-no-self-verify", "rule": "R9 technician cannot verify own job", "test": "CloseRulesIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestWorkflowService.java",
+        "find": "if (req.technician() != null && req.technician().id().equals(manager.id())) {", "replace": "if (false) {" },
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestRepository.java",
+        "find": "WHERE id = :id AND status = 'COMPLETED' AND (technician_id IS NULL OR technician_id <> :managerId)",
+        "replace": "WHERE id = :id AND status = 'COMPLETED'" },
+      { "file": "service/src/main/resources/db/migration/V2__requests.sql",
+        "find": "verified_by IS NULL OR verified_by <> technician_id", "replace": "TRUE" } ] },
+  { "id": "08-R7-override", "rule": "R7 override only for URGENT, reviewed before close", "test": "OverrideIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestRepository.java",
+        "find": "WHERE id = :id AND priority = 'URGENT' AND status IN ('ASSIGNED', 'ESTIMATE_SUBMITTED')",
+        "replace": "WHERE id = :id AND status IN ('ASSIGNED', 'ESTIMATE_SUBMITTED')" },
+      { "file": "service/src/main/resources/db/migration/V2__requests.sql",
+        "find": "NOT override OR priority = 'URGENT'", "replace": "TRUE" },
+      { "file": "service/src/main/resources/db/migration/V2__requests.sql",
+        "find": "status <> 'VERIFIED_CLOSED' OR NOT override OR override_review IS NOT NULL", "replace": "TRUE" } ] },
+  { "id": "09-R10-history-append-only", "rule": "R10 history is append-only", "test": "HistoryAppendOnlyIT",
+    "edits": [
+      { "file": "service/src/main/resources/db/migration/V4__append_only.sql",
+        "find": "RAISE EXCEPTION 'status_history is append-only: updates and deletes are forbidden';",
+        "replace": "RETURN COALESCE(NEW, OLD);" } ] },
+  { "id": "10-money-no-floats", "rule": "Money has no floats", "test": "NoFloatSchemaIT",
+    "edits": [
+      { "file": "service/src/main/java/ng/tesa/genie/config/JacksonConfig.java",
+        "find": ".disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)", "replace": ".enable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)" },
+      { "file": "service/src/main/java/ng/tesa/genie/config/JacksonConfig.java",
+        "find": ".setCoercion(CoercionInputShape.Float, CoercionAction.Fail)\n                        .setCoercion(CoercionInputShape.EmptyString",
+        "replace": ".setCoercion(CoercionInputShape.Float, CoercionAction.TryConvert)\n                        .setCoercion(CoercionInputShape.EmptyString" } ] }
+]
