@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -20,6 +21,7 @@ import ng.tesa.genie.common.ForbiddenException;
 import ng.tesa.genie.common.IdempotencyKeyReusedException;
 import ng.tesa.genie.common.NotFoundException;
 import ng.tesa.genie.estimate.Estimate;
+import ng.tesa.genie.estimate.EstimateLine;
 import ng.tesa.genie.estimate.EstimateRepository;
 
 @Service
@@ -111,7 +113,17 @@ public class RequestWorkflowService {
     }
 
     @Transactional
-    public Estimate submitEstimate(UUID requestId, long amountKobo, CurrentUser technician) {
+    public Estimate submitEstimate(UUID requestId, long amountKobo, List<EstimateLine> lines, CurrentUser technician) {
+        // MVP feedback item 6: a breakdown must add up to the total. The deferred V5 trigger
+        // estimate_lines_match_total enforces the same rule in the database at commit.
+        if (!lines.isEmpty()) {
+            long sum = lines.stream().mapToLong(EstimateLine::amountKobo).reduce(0L, Math::addExact);
+            if (sum != amountKobo) {
+                throw new ConflictException(ErrorCode.VALIDATION_FAILED,
+                        "amountKobo (" + amountKobo + ") must equal the sum of the lines (" + sum + ").");
+            }
+        }
+
         MaintenanceRequest req = requests.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Maintenance request not found: " + requestId));
 
@@ -126,9 +138,11 @@ public class RequestWorkflowService {
         }
 
         UUID estimateId = estimates.insert(requestId, amountKobo, technician.id());
+        estimates.insertLines(estimateId, lines);
         requests.updateStatus(requestId, "ESTIMATE_SUBMITTED");
         history.append(requestId, "ASSIGNED", "ESTIMATE_SUBMITTED", technician.id(),
-                "Estimate submitted: " + amountKobo + " kobo");
+                "Estimate submitted: " + amountKobo + " kobo"
+                        + (lines.isEmpty() ? "" : " (" + lines.size() + (lines.size() == 1 ? " line)" : " lines)")));
 
         return estimates.findById(estimateId).orElseThrow();
     }

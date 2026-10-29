@@ -3,7 +3,10 @@ package ng.tesa.genie.estimate;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,7 +58,8 @@ public class EstimateRepository {
                 rs.getString("decision"),
                 rs.getString("decision_reason"),
                 decidedBy,
-                getInstant(rs, "decided_at")
+                getInstant(rs, "decided_at"),
+                List.of()
         );
     }
 
@@ -72,21 +76,62 @@ public class EstimateRepository {
         return jdbc.sql(SELECT_ESTIMATE + " WHERE e.id = :id")
                 .param("id", id)
                 .query(EstimateRepository::mapRow)
-                .optional();
+                .optional()
+                .map(e -> withLines(List.of(e)).getFirst());
     }
 
     public List<Estimate> findByRequestId(UUID requestId) {
-        return jdbc.sql(SELECT_ESTIMATE + " WHERE e.request_id = :requestId ORDER BY e.submitted_at ASC")
+        return withLines(jdbc.sql(SELECT_ESTIMATE + " WHERE e.request_id = :requestId ORDER BY e.submitted_at ASC")
                 .param("requestId", requestId)
                 .query(EstimateRepository::mapRow)
-                .list();
+                .list());
     }
 
     public Optional<Estimate> findPendingByRequestId(UUID requestId) {
         return jdbc.sql(SELECT_ESTIMATE + " WHERE e.request_id = :requestId AND e.decision IS NULL")
                 .param("requestId", requestId)
                 .query(EstimateRepository::mapRow)
-                .optional();
+                .optional()
+                .map(e -> withLines(List.of(e)).getFirst());
+    }
+
+    /** Loads the cost breakdown (V5 {@code estimate_line}) of all the given estimates in one query. */
+    private List<Estimate> withLines(List<Estimate> found) {
+        if (found.isEmpty()) {
+            return found;
+        }
+        Map<UUID, List<EstimateLine>> byEstimate = new LinkedHashMap<>();
+        found.forEach(e -> byEstimate.put(e.id(), new ArrayList<>()));
+        jdbc.sql("""
+                SELECT estimate_id, category, description, amount_kobo FROM estimate_line
+                WHERE estimate_id IN (:ids) ORDER BY estimate_id, position
+                """)
+                .param("ids", List.copyOf(byEstimate.keySet()))
+                .query(rs -> {
+                    byEstimate.get(rs.getObject("estimate_id", UUID.class)).add(new EstimateLine(
+                            rs.getString("category"), rs.getString("description"), rs.getLong("amount_kobo")));
+                });
+        return found.stream().map(e -> e.withLines(byEstimate.get(e.id()))).toList();
+    }
+
+    /**
+     * Writes the breakdown in entry order. The deferred V5 trigger {@code estimate_lines_match_total}
+     * checks at commit that the lines add up to the estimate's amount.
+     */
+    public void insertLines(UUID estimateId, List<EstimateLine> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            EstimateLine line = lines.get(i);
+            jdbc.sql("""
+                    INSERT INTO estimate_line (estimate_id, position, category, description, amount_kobo)
+                    VALUES (:estimateId, :position, :category, :description, :amountKobo)
+                    """)
+                    .param("estimateId", estimateId)
+                    .param("position", i + 1)
+                    .param("category", line.category())
+                    .param("description", line.description().trim())
+                    .param("amountKobo", line.amountKobo())
+                    .update();
+        }
     }
 
     public UUID insert(UUID requestId, long amountKobo, UUID submittedBy) {

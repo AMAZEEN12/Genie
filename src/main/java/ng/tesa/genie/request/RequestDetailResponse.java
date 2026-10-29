@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import ng.tesa.genie.auth.CurrentUser;
+import ng.tesa.genie.auth.Role;
 import ng.tesa.genie.estimate.Estimate;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -41,6 +42,27 @@ public record RequestDetailResponse(
         List<Estimate> estimates,
         List<StatusHistoryEntry> history
 ) {
+    /**
+     * The response for one caller. MVP feedback item 1: an EMPLOYEE gets no cost data: no
+     * estimates (an empty list, since the contract requires the field), no actual cost, no finance
+     * review of an override, and only their own history notes. Other roles get everything.
+     */
+    public static RequestDetailResponse forViewer(MaintenanceRequest request, CurrentUser viewer) {
+        RequestDetailResponse full = from(request);
+        if (viewer == null || viewer.role() != Role.EMPLOYEE) {
+            return full;
+        }
+        return new RequestDetailResponse(
+                full.id(), full.reference(), full.title(), full.description(), full.building(), full.location(),
+                full.equipment(), full.category(), full.priority(), full.status(), full.reportedBy(),
+                full.reportedAt(), full.technician(), full.assignedBy(), full.deadline(), full.override(),
+                full.overrideReason(), full.overrideBy(), null, null, null, full.workDone(),
+                null, full.completedOn(), full.verifiedBy(), full.verifiedAt(), full.version(),
+                List.of(),
+                full.history().stream().map(entry -> entry.visibleTo(viewer)).toList()
+        );
+    }
+
     public static RequestDetailResponse from(MaintenanceRequest request) {
         return new RequestDetailResponse(
                 request.id(), request.reference(), request.title(), request.description(),
