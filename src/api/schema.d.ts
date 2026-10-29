@@ -118,6 +118,8 @@ export interface paths {
         /**
          * Get maintenance request details
          * @description Safe. Idempotent. Any authenticated role with access to the request.
+         *     For an EMPLOYEE (v0.2.0): `estimates` is empty, `actualCostKobo` and the override review fields are
+         *     absent, and history notes written by other people are left out. Other roles get everything.
          */
         get: operations["getRequest"];
         put?: never;
@@ -238,6 +240,7 @@ export interface paths {
         /**
          * Retrieve the append-only status change audit history
          * @description Safe. Idempotent. Any authenticated role with access to the request.
+         *     For an EMPLOYEE (v0.2.0), entries keep their `note` only when the employee wrote it.
          */
         get: operations["getRequestHistory"];
         put?: never;
@@ -312,8 +315,25 @@ export interface components {
         CreateEstimateRequest: {
             /**
              * Format: int64
-             * @description Cost estimate in integer kobo.
+             * @description Cost estimate in integer kobo. When `lines` is sent, it must equal their sum (otherwise 400 `VALIDATION_FAILED`).
              */
+            amountKobo: number;
+            /** @description Optional cost breakdown (v0.2.0), in display order. The lines must add up to `amountKobo`. */
+            lines?: components["schemas"]["EstimateLineInput"][];
+        };
+        /** @enum {string} */
+        EstimateLineCategory: "LABOUR" | "MATERIALS" | "OTHER";
+        EstimateLineInput: {
+            category: components["schemas"]["EstimateLineCategory"];
+            /** @description What the line covers, e.g. "Compressor capacitor". Trimmed; must not be blank. */
+            description: string;
+            /** Format: int64 */
+            amountKobo: number;
+        };
+        EstimateLine: {
+            category: components["schemas"]["EstimateLineCategory"];
+            description: string;
+            /** Format: int64 */
             amountKobo: number;
         };
         EstimateDecisionRequest: {
@@ -380,6 +400,8 @@ export interface components {
             decidedBy?: components["schemas"]["User"];
             /** Format: date-time */
             decidedAt?: string;
+            /** @description Cost breakdown (v0.2.0), in the order it was entered. Empty for estimates submitted without one. */
+            lines?: components["schemas"]["EstimateLine"][];
         };
         StatusHistoryEntry: {
             /** Format: uuid */
@@ -449,6 +471,7 @@ export interface components {
             /** Format: date-time */
             verifiedAt?: string;
             version: number;
+            /** @description Always empty when the caller is an EMPLOYEE (v0.2.0). */
             estimates: components["schemas"]["Estimate"][];
             history: components["schemas"]["StatusHistoryEntry"][];
         };

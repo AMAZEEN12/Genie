@@ -11,6 +11,9 @@ export type Estimate = components['schemas']['Estimate'];
 export type StatusHistoryEntry = components['schemas']['StatusHistoryEntry'];
 export type AssignRequest = components['schemas']['AssignRequest'];
 export type CreateEstimateRequest = components['schemas']['CreateEstimateRequest'];
+export type EstimateLine = components['schemas']['EstimateLine'];
+export type EstimateLineInput = components['schemas']['EstimateLineInput'];
+export type EstimateLineCategory = components['schemas']['EstimateLineCategory'];
 export type EstimateDecisionRequest = components['schemas']['EstimateDecisionRequest'];
 export type EstimateDecision = components['schemas']['EstimateDecision'];
 export type TransitionRequest = components['schemas']['TransitionRequest'];
@@ -694,6 +697,7 @@ export async function createEstimateApi(
       id: crypto.randomUUID(),
       requestId,
       amountKobo: payload.amountKobo,
+      lines: payload.lines ?? [],
       submittedBy: user || DEMO_TECHNICIAN_1,
       submittedAt: new Date().toISOString(),
     };
@@ -1018,4 +1022,21 @@ export function formatKoboToNaira(kobo?: number | null): string {
   })
     .format(naira)
     .replace('NGN', '₦');
+}
+
+/** Largest kobo amount JavaScript holds exactly (2^53 - 1). */
+const MAX_SAFE_KOBO = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Parses a naira amount typed by a person into integer kobo, without floating-point arithmetic:
+ * "18500" -> 1850000, "18,500.5" -> 1850050, "0.05" -> 5. Returns null for anything that isn't a
+ * positive amount with at most two decimal places.
+ */
+export function parseNairaToKobo(text: string): number | null {
+  const cleaned = text.trim().replace(/,/g, '');
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(cleaned);
+  if (!match) return null;
+  const kobo = BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0'));
+  if (kobo <= 0n || kobo > BigInt(MAX_SAFE_KOBO)) return null;
+  return Number(kobo);
 }

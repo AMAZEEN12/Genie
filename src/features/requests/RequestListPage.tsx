@@ -10,6 +10,7 @@ import {
   type RequestStatus,
 } from '../../api/requests';
 import { StatusBadge } from '../../components/StatusBadge';
+import { statusLabel } from '../../components/statusLabels';
 import { PriorityBadge } from '../../components/PriorityBadge';
 
 export interface RequestListPageProps {
@@ -185,7 +186,7 @@ export function RequestListPage({ preset }: RequestListPageProps) {
                     : 'bg-[#0D0D0D] text-[#A8A8A8] border-white/14 hover:text-white hover:border-white/30'
                 }`}
               >
-                {status.label}
+                {status.value === 'ALL' ? status.label : statusLabel(status.value, user?.role)}
               </button>
             );
           })}
@@ -380,7 +381,7 @@ export function RequestListPage({ preset }: RequestListPageProps) {
 
                     {/* Status */}
                     <td className="px-5 py-4 whitespace-nowrap">
-                      <StatusBadge status={req.status} />
+                      <StatusBadge status={req.status} viewerRole={user?.role} />
                     </td>
 
                     {/* Priority */}
@@ -430,7 +431,7 @@ export function RequestListPage({ preset }: RequestListPageProps) {
                   <span className="font-mono text-xs font-bold text-[#E1EE04]">
                     {req.reference}
                   </span>
-                  <StatusBadge status={req.status} />
+                  <StatusBadge status={req.status} viewerRole={user?.role} />
                 </div>
 
                 {/* Card Middle: Title & Equipment */}

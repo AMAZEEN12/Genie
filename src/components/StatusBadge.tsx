@@ -1,4 +1,7 @@
-import type { RequestStatus } from '../api/requests';
+import type { RequestStatus, User } from '../api/requests';
+import { statusLabel } from './statusLabels';
+
+type Role = User['role'];
 
 const STATUS_CONFIG: Record<
   RequestStatus,
@@ -55,7 +58,15 @@ const STATUS_CONFIG: Record<
   },
 };
 
-export function StatusBadge({ status, className = '' }: { status: RequestStatus; className?: string }) {
+export function StatusBadge({
+  status,
+  viewerRole,
+  className = '',
+}: {
+  status: RequestStatus;
+  viewerRole?: Role;
+  className?: string;
+}) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.REPORTED;
 
   return (
@@ -63,7 +74,7 @@ export function StatusBadge({ status, className = '' }: { status: RequestStatus;
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${config.bg} ${config.text} ${config.border} ${className}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} aria-hidden="true" />
-      <span>{config.label}</span>
+      <span>{statusLabel(status, viewerRole)}</span>
     </span>
   );
 }
