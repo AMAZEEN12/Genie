@@ -24,7 +24,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white flex flex-col justify-between p-6 sm:p-10 relative overflow-hidden select-none">
       {/* Top Bar Navigation */}
-      <header className="w-full flex justify-center sm:justify-end items-center z-10">
+      <header className="w-full flex justify-end items-center z-10">
         <nav aria-label="Main Navigation" className="flex items-center gap-3">
           {isAuthenticated && user ? (
             <button
@@ -58,7 +58,7 @@ export function HomePage() {
       {/* Main Hero Content */}
       <main
         id="main"
-        className="my-auto py-12 flex flex-col items-start max-w-5xl mx-auto w-full"
+        className="my-auto py-12 flex flex-col items-center text-center sm:items-start sm:text-left max-w-5xl mx-auto w-full"
       >
         {/* Brand Wordmark */}
         <div className="mb-6 sm:mb-8">
@@ -66,19 +66,19 @@ export function HomePage() {
         </div>
 
         {/* Tagline */}
-        <h1 className="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-[80px] leading-[1.05] tracking-tight max-w-3xl text-left">
+        <h1 className="font-display font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-[80px] leading-[1.05] tracking-tight max-w-3xl">
           Close the loop on{" "}
           <span className="text-[#E1EE04]">every repair.</span>
         </h1>
 
         {/* Subtitle / Description */}
-        <p className="mt-6 text-base sm:text-lg text-[#A8A8A8] max-w-xl text-left font-normal leading-relaxed">
+        <p className="mt-6 text-base sm:text-lg text-[#A8A8A8] max-w-xl font-normal leading-relaxed">
           Genie records every maintenance request from the moment a fault is
           reported to the moment a manager confirms the repair.
         </p>
 
-        {/* Quick CTA */}
-        <div className="mt-8">
+        {/* Quick CTA: centred on small screens with the rest of the hero, left-aligned from sm up */}
+        <div className="mt-8 flex justify-center sm:justify-start">
           <button
             type="button"
             onClick={handleAction}

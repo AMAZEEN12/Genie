@@ -13,14 +13,16 @@ export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
     hero: 'text-7xl sm:text-8xl md:text-9xl lg:text-[144px]',
   }[size] ?? 'text-2xl';
 
-  // Dimension scaling for the 3D 'i' icon
-  const iconSizes = {
-    sm: { width: 14, height: 26 },
-    header: { width: 14, height: 26 },
-    md: { width: 20, height: 38 },
-    lg: { width: 32, height: 62 },
-    hero: { width: 64, height: 124 },
-  }[size] ?? { width: 14, height: 26 };
+  // Height of the 3D 'i' in em, so it scales with the text at every breakpoint instead of staying
+  // a fixed pixel size (a fixed 124px 'i' towered over the 72px hero text on phones).
+  // Each ratio keeps that size's previous desktop proportions; the width follows the viewBox.
+  const iconHeightEm = {
+    sm: 1.08,
+    header: 1.08,
+    md: 1.05,
+    lg: 0.86,
+    hero: 0.86,
+  }[size] ?? 1.08;
 
   return (
     <div
@@ -35,8 +37,8 @@ export function GenieLogo({ className = '', size = 'hero' }: GenieLogoProps) {
           aria-hidden="true"
         />
         <svg
-          width={iconSizes.width}
-          height={iconSizes.height}
+          data-testid="genie-logo-i"
+          style={{ height: `${iconHeightEm}em`, width: 'auto' }}
           viewBox="0 0 64 124"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"

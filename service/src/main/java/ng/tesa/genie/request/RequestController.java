@@ -107,14 +107,14 @@ public class RequestController {
                 body.title(), body.description(), body.building(), body.location(),
                 body.equipment(), body.category(), body.priority(), idempotencyKey, user
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(RequestDetailResponse.from(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(RequestDetailResponse.forViewer(created, user));
     }
 
     @GetMapping("/{id}")
     public RequestDetailResponse getRequest(@PathVariable UUID id, @AuthenticationPrincipal CurrentUser user) {
         MaintenanceRequest req = workflow.getRequestWithDetails(id);
         assertCanView(req, user);
-        return RequestDetailResponse.from(req);
+        return RequestDetailResponse.forViewer(req, user);
     }
 
     @PutMapping("/{id}/assignment")
@@ -125,8 +125,8 @@ public class RequestController {
         if (user.role() != Role.MANAGER) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only managers can assign technicians.");
         }
-        return RequestDetailResponse.from(
-                workflow.assignTechnician(id, body.technicianId(), body.deadline(), body.version(), user));
+        return RequestDetailResponse.forViewer(
+                workflow.assignTechnician(id, body.technicianId(), body.deadline(), body.version(), user), user);
     }
 
     @PostMapping("/{id}/transitions")
@@ -171,7 +171,7 @@ public class RequestController {
             }
             default -> throw new ConflictException(ErrorCode.VALIDATION_FAILED, "Unknown transition type: " + body.type());
         };
-        return RequestDetailResponse.from(request);
+        return RequestDetailResponse.forViewer(request, user);
     }
 
     @PutMapping("/{id}/override-review")
@@ -182,7 +182,7 @@ public class RequestController {
         if (user.role() != Role.FINANCE) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only finance can review overrides.");
         }
-        return RequestDetailResponse.from(workflow.reviewOverride(id, body.review(), body.note(), user));
+        return RequestDetailResponse.forViewer(workflow.reviewOverride(id, body.review(), body.note(), user), user);
     }
 
     @GetMapping("/{id}/history")
@@ -192,7 +192,7 @@ public class RequestController {
         MaintenanceRequest request = requests.findById(id)
                 .orElseThrow(() -> new NotFoundException("Maintenance request not found: " + id));
         assertCanView(request, user);
-        return history.findByRequestId(id);
+        return history.findByRequestId(id).stream().map(entry -> entry.visibleTo(user)).toList();
     }
 
     private static void assertCanView(MaintenanceRequest request, CurrentUser user) {

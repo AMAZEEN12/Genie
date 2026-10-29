@@ -6,12 +6,12 @@ Maintenance requests from fault to verified repair (TeSA Cohort 6 capstone, Team
 
 ## Commands
 - Database (local): `docker compose up -d db` (Postgres 17 on host port **5433**, database, user and password `genie`)
-- Service build and test **(verified 2026-10-25)**: `cd service && ./mvnw verify` (healthy: `Tests run: 34, Failures: 0, Errors: 0` integration tests across 13 test classes plus `PasswordTest`, then `BUILD SUCCESS`). Needs **Docker Desktop running** (Testcontainers, `postgres:17-alpine`).
+- Service build and test **(verified 2026-10-25)**: `cd service && ./mvnw verify` (healthy: `BUILD SUCCESS`; 54 tests on `feat/mvp-feedback`, 2026-10-29). Needs **Docker Desktop running** (Testcontainers, `postgres:17-alpine`).
 - Run (planned; the same app was verified in the image above): `cd service && ./mvnw spring-boot:run` with `docker compose up -d db` first (healthy: `Started GenieApplication`; `curl localhost:8080/api/v1/health` gives `{"status":"UP","database":"UP",...}`). Add `-Dspring-boot.run.profiles=demo` for the seed. Flyway runs at start-up, so the service won't start without a database.
 - Service image **(verified 2026-10-25)**: `docker build -t genie-service service/` (about 520 MB, runs as the non-root user `genie`). Started with `DATABASE_JDBC_URL` pointing at a Postgres 17 container, it logged `Started GenieApplication in 8.8 seconds`, and both `/` and `/api/v1/health` answered `UP`.
 - Contract lint **(verified 2026-10-25)**: `npx @redocly/cli lint contract/openapi.yaml` (0 errors, valid).
 - Mock (planned, step 2): `cd web && npm run mock` (Prism on port 4711, DM8; serves paths at the root)
-- Web **(verified 2026-10-25)**: `cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build` (healthy: no lint output, `Tests 4 passed (4)`, `built in`). `npm run dev` serves on http://127.0.0.1:5173.
+- Web **(verified 2026-10-25)**: `cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build` (healthy: no lint output, `Tests 91 passed (91)` on `feat/mvp-feedback` 2026-10-29, `built in`). `npm run dev` serves on http://127.0.0.1:5173.
 - Generated API types **(verified 2026-10-25)**: `cd web && npm run generate:api` writes `src/api/schema.d.ts`.
 
 ## Conventions

@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
   title: Genie API
-  version: 0.1.1
+  version: 0.2.0
   summary: Maintenance requests from fault to verified repair (TeSA Cohort 6, Team 3 side project).
   description: |
     Contract v0.1.1 covers the **Monday 26 Oct MVP paths only** (EXECUTION.md step 2).
+    v0.2.0 (MVP feedback, proposed by Victor Oyeleke) adds an optional cost breakdown to estimates
+    and states what an EMPLOYEE may see (no billing data). A v0.1.1 client keeps working.
     
     Status sequence:
     REPORTED -> ASSIGNED -> ESTIMATE_SUBMITTED -> ESTIMATE_APPROVED -> IN_PROGRESS -> COMPLETED -> VERIFIED_CLOSED
@@ -18,6 +20,9 @@ info:
     - Recording writes (`POST /requests`) require an `Idempotency-Key` (UUID). Replaying the same key with the same body returns the original result; the same key with a different body returns 422.
     - All timestamps are UTC (RFC 3339). "Today" filters use the Africa/Lagos day.
     - All data is fictional demonstration data.
+    - **Employees see nothing about billing** (v0.2.0). When the caller is an EMPLOYEE, request responses
+      have `estimates: []`, no `actualCostKobo`, no override review (`overrideReview`, `overrideReviewedBy`,
+      `overrideReviewNote`), and history entries keep a `note` only if the employee wrote it.
   contact:
     name: Team 3 (Isaac Bassey, API and access owner; Nnaemeka Chukwuma, Data and rules owner)
 servers:
@@ -239,7 +244,10 @@ paths:
       tags: [requests]
       operationId: getRequest
       summary: Get maintenance request details
-      description: Safe. Idempotent. Any authenticated role with access to the request.
+      description: |
+        Safe. Idempotent. Any authenticated role with access to the request.
+        For an EMPLOYEE (v0.2.0): `estimates` is empty, `actualCostKobo` and the override review fields are
+        absent, and history notes written by other people are left out. Other roles get everything.
       parameters:
         - $ref: '#/components/parameters/RequestId'
         - $ref: '#/components/parameters/RequestIdParam'
@@ -453,7 +461,9 @@ paths:
       tags: [requests]
       operationId: getRequestHistory
       summary: Retrieve the append-only status change audit history
-      description: Safe. Idempotent. Any authenticated role with access to the request.
+      description: |
+        Safe. Idempotent. Any authenticated role with access to the request.
+        For an EMPLOYEE (v0.2.0), entries keep their `note` only when the employee wrote it.
       parameters:
         - $ref: '#/components/parameters/RequestId'
         - $ref: '#/components/parameters/RequestIdParam'
@@ -731,7 +741,49 @@ components:
           format: int64
           minimum: 1
           x-unit: kobo
-          description: Cost estimate in integer kobo.
+          description: Cost estimate in integer kobo. When `lines` is sent, it must equal their sum (otherwise 400 `VALIDATION_FAILED`).
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: Optional cost breakdown (v0.2.0), in display order. The lines must add up to `amountKobo`.
+          items:
+            $ref: '#/components/schemas/EstimateLineInput'
+
+    EstimateLineCategory:
+      type: string
+      enum: [LABOUR, MATERIALS, OTHER]
+
+    EstimateLineInput:
+      type: object
+      required: [category, description, amountKobo]
+      additionalProperties: false
+      properties:
+        category:
+          $ref: '#/components/schemas/EstimateLineCategory'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: What the line covers, e.g. "Compressor capacitor". Trimmed; must not be blank.
+        amountKobo:
+          type: integer
+          format: int64
+          minimum: 1
+          x-unit: kobo
+
+    EstimateLine:
+      type: object
+      required: [category, description, amountKobo]
+      properties:
+        category:
+          $ref: '#/components/schemas/EstimateLineCategory'
+        description:
+          type: string
+        amountKobo:
+          type: integer
+          format: int64
+          x-unit: kobo
 
     EstimateDecisionRequest:
       type: object
@@ -840,6 +892,11 @@ components:
         decidedAt:
           type: string
           format: date-time
+        lines:
+          type: array
+          description: Cost breakdown (v0.2.0), in the order it was entered. Empty for estimates submitted without one.
+          items:
+            $ref: '#/components/schemas/EstimateLine'
 
     StatusHistoryEntry:
       type: object
@@ -970,6 +1027,7 @@ components:
           type: integer
         estimates:
           type: array
+          description: Always empty when the caller is an EMPLOYEE (v0.2.0).
           items:
             $ref: '#/components/schemas/Estimate'
         history:
