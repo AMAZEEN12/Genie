@@ -141,3 +141,39 @@ If implementation departs from this plan, update this file in the same commit as
 ## Measurement
 - Leading: share of changes that merge from the first implementation pass; time from plan acceptance to merged PR.
 - Lagging: rework cycles per change; whether the merged diff still matches this plan.
+
+## Addendum 2026-10-29: MVP feedback (R15-R21)
+Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by **Nnaemeka Chukwuma**. Added 2026-10-29 as an addendum to the accepted artifacts, at Nnaemeka's direction (DM17), instead of a separate change folder. Branch `feat/mvp-feedback`.
+
+### Design
+- **R15:** `RequestDetailResponse.forViewer(request, viewer)` is used by every request endpoint. For an EMPLOYEE it returns `estimates: []` (the contract requires the field), drops `actualCostKobo` and the override review fields, and `StatusHistoryEntry.visibleTo(viewer)` keeps only the employee's own notes (also on `GET /requests/{id}/history`). The web hides the cost card, the actual cost and the finance review, and shows neutral labels from `components/statusLabels.ts`.
+- **R20:** migration **V5** `estimate_line` (position 1-20, category LABOUR/MATERIALS/OTHER, description 1-120 characters, amount > 0) with the deferred constraint triggers `estimate_lines_match_total` and `estimate_total_matches_lines`: when an estimate has lines, they add up to its `amount_kobo`. Undo **U5**. The service checks the same rule first (400 `VALIDATION_FAILED`). Contract **0.2.0**: optional `CreateEstimateRequest.lines`, `Estimate.lines`. The form parses naira as text into integer kobo (`parseNairaToKobo`), never through floating point.
+- **R16-R18:** Tailwind classes in `HomePage.tsx`; the logo's "i" is sized in `em` in `GenieLogo.tsx`.
+- **R19:** `web/vercel.json` rewrites every path to `/index.html` (and turns off Vercel's Git deployments, as `deploy.yml` already assumed).
+- **R21:** already fixed on `main` by PR #12; a test now covers every status.
+
+### Files that change
+| File | New / modified | Requirements |
+|----|----|----|
+| `contract/openapi.yaml` (0.2.0), `decisions.md` (§3 line, DM17-DM19) | modified | R15, R20 |
+| `service/.../db/migration/V5__estimate_lines.sql`, `db/rollback/U5__estimate_lines.sql` | new | R20 |
+| `service/.../estimate/EstimateLine.java` | new | R20 |
+| `service/.../estimate/Estimate.java`, `EstimateRepository.java`, `EstimateController.java`, `request/RequestWorkflowService.java` | modified | R20 |
+| `service/.../request/RequestDetailResponse.java`, `StatusHistoryEntry.java`, `RequestController.java` | modified | R15 |
+| `service/src/test/.../request/EmployeeBillingIT.java`, `estimate/EstimateBreakdownIT.java` | new | R15, R20 |
+| `web/src/features/home/HomePage.tsx`, `web/src/components/GenieLogo.tsx`, `web/vercel.json` | modified / new | R16-R19 |
+| `web/src/components/StatusBadge.tsx`, `statusLabels.ts` (new), `features/requests/RequestDetailPage.tsx`, `RequestListPage.tsx` | modified | R15, R20 |
+| `web/src/features/requests/modals/SubmitEstimateModal.tsx`, `web/src/api/requests.ts`, `web/src/api/schema.d.ts` (generated) | modified | R20 |
+| Web tests: `GenieLogo.test.tsx`, `HomeLayout.test.tsx`, `app/vercelConfig.test.ts`, `StatusBadge.test.tsx`, `RequestDetailPage.roles.test.tsx`, `modals/SubmitEstimateModal.test.tsx` | new | R15-R21 |
+
+### Risks
+| Risk | What it could break | Mitigation |
+|----|----|----|
+| V5 trigger rejects valid writes | Estimate submission | Deferred to commit; estimates without lines are unaffected; `EstimateIT` (old path) still green |
+| Redaction misses a field | An employee sees a cost | One place (`forViewer`); `EmployeeBillingIT` checks the raw JSON for any amount or "kobo" |
+| Employee labels confuse managers | Wrong wording for other roles | Labels change for EMPLOYEE only; `StatusBadge.test.tsx` checks the other roles |
+| `vercel.json` turns off Git deployments | Vercel previews | Deploys already go through `deploy.yml`'s prebuilt CLI deploy |
+
+### Departures from the approach elsewhere
+- The status sequence is unchanged; only its **wording** differs for employees.
+- `submitEstimate` still calls `requests.updateStatus` without a status guard in the `UPDATE` (pre-existing, outside this change); noted for Isaac Bassey.

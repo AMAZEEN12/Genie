@@ -103,3 +103,15 @@ rollback:   as in deploy-plan.md §3-§4 (Vercel rollback, Render rollback, Qoce
 | Qocent funding (Stockwise PD5a): until settled, Stack V is official | intent.md, deploy-plan | Isaac Bassey + Goodnews | 4 |
 | Separate Render workspace for Genie (Stockwise PD5c) | intent.md | Blessing Nwafor | 4 |
 | Spring Boot 4-compatible contract validator (follows the Stockwise answer) | test-plan.md | Isaac Bassey | 7 |
+
+## Addendum 2026-10-29: MVP feedback (R15-R21)
+Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by **Nnaemeka Chukwuma**. Added 2026-10-29 as an addendum to the accepted artifacts, at Nnaemeka's direction (DM17), instead of a separate change folder.
+
+| # | Step | Actor | Gate |
+|----|----|----|----|
+| F1 | Review PR from `feat/mvp-feedback` | Victor Oyeleke (screens, R16-R21), Isaac Bassey (contract 0.2.0, V5 migration: high-risk path) | Code-owner approval; Isaac adds his half of the 0.2.0 line in `decisions.md` §3 |
+| F2 | Merge to `main` | reviewer | CI green (guards, gitleaks, contract lint, service, web) |
+| F3 | Deploy (`deploy.yml`: migrate V5 on Neon, Vercel, Render) | release manager (Isaac Bassey) | Smoke OK |
+| F4 | Check live: refresh `/requests` (200, not 404); log in as `employee@genie.test` and open a priced request (no amounts); submit an itemised estimate as `technician@genie.test` and see the lines as `finance@genie.test`; home page on a phone (buttons right, hero centred, "i" in proportion) | Victor Oyeleke | All pass, noted in the WORKLOG |
+
+Rollback: `./mvnw -Pundo -Dundo.target=4 exec:java` removes V5; Vercel and Render roll back to the previous deploy (release rules unchanged).

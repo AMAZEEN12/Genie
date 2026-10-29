@@ -12,12 +12,14 @@ import {
   getRequestApi,
   getRequestHistoryApi,
   reviewOverrideApi,
+  type CreateEstimateRequest,
   type Estimate,
   type EstimateDecision,
   type OverrideReview,
   type TransitionRequest,
 } from '../../api/requests';
 import { StatusBadge } from '../../components/StatusBadge';
+import { statusLabel } from '../../components/statusLabels';
 import { PriorityBadge } from '../../components/PriorityBadge';
 import { AssignTechnicianModal } from './modals/AssignTechnicianModal';
 import { SubmitEstimateModal } from './modals/SubmitEstimateModal';
@@ -85,9 +87,9 @@ export function RequestDetailPage() {
 
   // Mutation: Submit Estimate
   const estimateMutation = useMutation({
-    mutationFn: (amountKobo: number) => {
+    mutationFn: (estimate: CreateEstimateRequest) => {
       if (!id) throw new Error('Missing ID');
-      return createEstimateApi(id, { amountKobo });
+      return createEstimateApi(id, estimate);
     },
     onSuccess: () => {
       setIsEstimateOpen(false);
@@ -225,6 +227,10 @@ export function RequestDetailPage() {
     ? request.estimates[request.estimates.length - 1]
     : fallbackEstimate;
 
+  // MVP feedback item 1: employees see nothing about billing. The service also leaves cost data
+  // out of an employee's responses; this keeps the screen right even if a field slips through.
+  const canSeeCosts = user?.role !== 'EMPLOYEE';
+
   const isAssignedTechnician = Boolean(
     user?.role === 'TECHNICIAN' && (
       (user?.id && request.technician?.id && user.id === request.technician.id) ||
@@ -254,7 +260,7 @@ export function RequestDetailPage() {
             {request.reference}
           </span>
           <div className="flex items-center gap-2">
-            <StatusBadge status={request.status} />
+            <StatusBadge status={request.status} viewerRole={user?.role} />
             <PriorityBadge priority={request.priority} override={request.override} />
           </div>
         </div>
@@ -345,7 +351,7 @@ export function RequestDetailPage() {
                   <span className="text-[#FF6B5E] font-bold text-xs uppercase tracking-wider">
                     ⚠ Urgent Override Active
                   </span>
-                  {request.overrideReview && (
+                  {request.overrideReview && canSeeCosts && (
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                         request.overrideReview === 'ACCEPTED'
@@ -371,8 +377,8 @@ export function RequestDetailPage() {
             )}
           </div>
 
-          {/* Estimate Card (if estimate exists) */}
-          {latestEstimate && (
+          {/* Estimate Card (if estimate exists; never for employees) */}
+          {canSeeCosts && latestEstimate && (
             <div className="bg-[#1A1A1A] border border-white/14 rounded-[16px] p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <h2 className="font-display text-base font-bold text-white">
@@ -408,6 +414,27 @@ export function RequestDetailPage() {
                 </div>
               </div>
 
+              {latestEstimate.lines && latestEstimate.lines.length > 0 && (
+                <table className="w-full text-xs" aria-label="Cost breakdown">
+                  <thead>
+                    <tr className="text-left text-[#A8A8A8] border-b border-white/10">
+                      <th scope="col" className="py-1.5 font-semibold">Category</th>
+                      <th scope="col" className="py-1.5 font-semibold">Item</th>
+                      <th scope="col" className="py-1.5 font-semibold text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestEstimate.lines.map((line, index) => (
+                      <tr key={index} className="border-b border-white/5 text-zinc-200">
+                        <td className="py-1.5 capitalize">{line.category.toLowerCase()}</td>
+                        <td className="py-1.5">{line.description}</td>
+                        <td className="py-1.5 text-right font-mono">{formatKoboToNaira(line.amountKobo)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
               {latestEstimate.decisionReason && (
                 <div className="p-3 rounded-[10px] bg-red-950/30 border border-red-500/30 text-xs text-red-300">
                   <strong>Rejection Note:</strong> {latestEstimate.decisionReason}
@@ -424,12 +451,14 @@ export function RequestDetailPage() {
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-[#A8A8A8] block">Actual Final Cost:</span>
-                  <span className="text-[#E1EE04] font-display text-xl font-bold mt-0.5 block">
-                    {formatKoboToNaira(request.actualCostKobo)}
-                  </span>
-                </div>
+                {canSeeCosts && (
+                  <div>
+                    <span className="text-[#A8A8A8] block">Actual Final Cost:</span>
+                    <span className="text-[#E1EE04] font-display text-xl font-bold mt-0.5 block">
+                      {formatKoboToNaira(request.actualCostKobo)}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span className="text-[#A8A8A8] block">Completed Date:</span>
                   <span className="text-white font-medium text-sm mt-0.5 block">
@@ -626,7 +655,7 @@ export function RequestDetailPage() {
             {/* EMPLOYEE VIEW */}
             {user?.role === 'EMPLOYEE' && (
               <div className="p-3 rounded-[10px] bg-[#0D0D0D] border border-white/10 text-xs text-[#A8A8A8] text-center leading-relaxed">
-                Your maintenance request is in <strong className="text-white">{request.status}</strong> status.
+                Your maintenance request is in <strong className="text-white">{statusLabel(request.status, user?.role)}</strong> status.
                 Updates will appear on this timeline as work proceeds.
               </div>
             )}
@@ -652,14 +681,14 @@ export function RequestDetailPage() {
                       />
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-white">
-                          {entry.fromStatus ? `${entry.fromStatus} → ` : ''}
-                          <strong className="text-[#E1EE04]">{entry.toStatus}</strong>
+                          {entry.fromStatus ? `${statusLabel(entry.fromStatus, user?.role)} → ` : ''}
+                          <strong className="text-[#E1EE04]">{statusLabel(entry.toStatus, user?.role)}</strong>
                         </span>
                       </div>
                       <div className="text-[11px] text-[#A8A8A8] mt-0.5">
                         By {entry.actor.displayName} ({entry.actor.role}) • {new Date(entry.at).toLocaleString()}
                       </div>
-                      {entry.note && (
+                      {entry.note && (canSeeCosts || entry.actor?.id === user?.id) && (
                         <p className="mt-1 text-xs text-zinc-300 italic bg-[#0D0D0D] p-2 rounded border border-white/10">
                           "{entry.note}"
                         </p>
@@ -689,8 +718,8 @@ export function RequestDetailPage() {
       <SubmitEstimateModal
         isOpen={isEstimateOpen}
         onClose={() => setIsEstimateOpen(false)}
-        onSubmit={async (amountKobo) => {
-          await estimateMutation.mutateAsync(amountKobo);
+        onSubmit={async (estimate) => {
+          await estimateMutation.mutateAsync(estimate);
         }}
         isPending={estimateMutation.isPending}
         error={actionError}

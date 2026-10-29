@@ -68,3 +68,18 @@ Payments and accounting. Email via Resend, downloadable reports and cost analyti
 ## Measurement
 - Leading: time from the first conversation to an accepted intent.md (git timestamps).
 - Lagging: whether this intent is accepted into planning, and how many edits it gets after plan.md is first committed.
+
+## Addendum 2026-10-29: MVP feedback (R15-R21)
+Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by **Nnaemeka Chukwuma**. Added 2026-10-29 as an addendum to the accepted artifacts, at Nnaemeka's direction (DM17), instead of a separate change folder.
+
+| ID | Requirement | Acceptance criteria |
+|----|----|----|
+| R15 | **Employees see nothing about billing** (feedback item 1). | An EMPLOYEE's request responses carry no estimates, no actual cost, no finance review of an override and no notes written by others; the screens show no amounts, no cost cards and neutral status wording ("Awaiting approval", "Approved for repair"). The service enforces it, not only the screen (DM19). |
+| R16 | **Navbar on small screens:** Login and Get started are right-aligned (item 2). | The home page header is right-aligned at every width. |
+| R17 | **Logo:** the "i" scales with the rest of the wordmark (item 3). | The "i" is sized in `em`, so it shrinks with the text on phones instead of staying 124 px tall. |
+| R18 | **Hero on small screens:** the heading, text and "Report or manage a fault" button are centred (item 4). | Centred below the `sm` breakpoint, left-aligned from `sm` up. |
+| R19 | **Refreshing any page works** for every role (item 5). | `/requests`, `/requests/{id}`, `/my-jobs`, `/approvals` and `/requests/new` load on refresh instead of Vercel's 404. |
+| R20 | **Cost breakdown on estimates** (item 6). | The technician enters 1-20 lines (Labour, Materials or Other, a description, an amount); the total is their sum; Finance sees the lines before deciding. The service and the database both refuse a total that doesn't match (DM18). |
+| R21 | **Finance's Role Actions box is never blank** (reported by Nnaemeka Chukwuma while testing locally). | For every status, with or without an override, Finance sees an action or "No finance action pending". |
+
+**Out of scope:** editing an estimate after submission; letting employees see costs on request; changing the seed's existing estimates (they have no lines and stay valid).

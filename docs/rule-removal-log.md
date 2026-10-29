@@ -24,6 +24,9 @@ A valid entry shows `BUILD FAILURE` and the **test class name** in the output. T
 | 8 | R7 override only for URGENT, reviewed before close | `OverrideIT` | Fails without the protection |
 | 9 | R10 history is append-only | `HistoryAppendOnlyIT` | Fails without the protection |
 | 10 | Money has no floats | `NoFloatSchemaIT` | Fails without the protection |
+| 11 | R15 employees see no billing (service) | `EmployeeBillingIT` | Fails without the protection (2026-10-29) |
+| 12 | R20 estimate lines add up (service check) | `EstimateBreakdownIT` | Fails without the protection (2026-10-29) |
+| 13 | R20 estimate lines add up (database trigger) | `EstimateBreakdownIT` | Fails without the protection (2026-10-29) |
 
 All ten runs were reported by the script as "FAILS AS EXPECTED (valid evidence)".
 Not yet recorded: a green re-run after restoring each rule. The runner restored the code with `git checkout -- service` after each rule, but it was run without `-ConfirmGreen`. The passing state is shown by CI on `main`.
@@ -187,3 +190,17 @@ Fill each **Output** block by pasting the lines from the matching entry in `entr
 - Several rules are protected twice (service code and database). Each entry lists everything that had to be removed for the test to fail. A test that fails only when both layers are removed shows that the layers overlap, which is intended.
 - Rule 1 was already shown on the branch `evidence/no-assignment-guard` (commit 606ad46). The GitHub Actions "Concurrency evidence" run link is still to be added: <link>.
 - Rule 10 changes two Jackson settings. If a reviewer asks which one the test depends on, remove them one at a time and record the result.
+
+### 11. R15 employees see no billing (service)
+**Run:** 2026-10-29 by the agent for Nnaemeka Chukwuma, on Nnaemeka's machine, with the change restored afterwards (never committed).
+**Removed:** in `RequestDetailResponse.forViewer`, the EMPLOYEE branch (condition replaced by `if (true)`, so everyone gets the full response).
+**Test:** `EmployeeBillingIT#employeeGetsNoCostDataInTheRequestDetail`. **Result:** failed, `[estimates for an employee] expected: 0 but was: 1`.
+
+### 12. R20 estimate lines add up (service check)
+**Removed:** the `sum != amountKobo` check in `RequestWorkflowService.submitEstimate`.
+**Test:** `EstimateBreakdownIT#totalThatDoesNotMatchTheLinesIsRefusedAndNothingIsRecorded`. **Result:** failed, `expected: 400 but was: 500`. The database trigger still refused the estimate, so nothing was recorded: the rule is protected twice.
+
+### 13. R20 estimate lines add up (database trigger)
+**Removed:** in V5's `fn_estimate_lines_match_total`, the mismatch condition (replaced by `IF false`).
+**Test:** `EstimateBreakdownIT#databaseRefusesLinesThatDoNotAddUp`. **Result:** failed, `Expecting code to raise a throwable` (the mismatched line was accepted by direct SQL).
+
