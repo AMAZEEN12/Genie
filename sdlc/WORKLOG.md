@@ -7,7 +7,7 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 
 ## Resume here
 - **Stage:** Implementation, MVP feedback (R15-R21), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM17). Proposed by Victor Oyeleke; implemented by Nnaemeka Chukwuma.
-- **Step:** All seven items are implemented and verified locally on branch `feat/mvp-feedback` (from `origin/main` `4de0e94`). The work is **not committed yet**.
+- **Step:** All seven items are implemented and verified locally on branch `feat/mvp-feedback` (from `origin/main` `4de0e94`), committed as `42b68ec` and open as [PR #14](https://github.com/AMAZEEN12/Genie/pull/14) into `main`.
   1. **R15** Employees see nothing about billing: service redaction (`RequestDetailResponse.forViewer`, `StatusHistoryEntry.visibleTo`) plus screens (cost card, actual cost and finance review hidden; neutral labels "Awaiting approval", "Approved for repair").
   2. **R16** Navbar right-aligned on small screens.
   3. **R17** Logo "i" sized in `em`.
@@ -21,8 +21,8 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
   - contract lint is valid;
   - new tests were seen failing on the old code;
   - three rule removals are logged (rows 11-13 in `docs/rule-removal-log.md`).
-- **Next action:** with the user's go-ahead, commit on `feat/mvp-feedback`, push, and open a PR into `main` (no Claude attribution in commits or PR text), then follow `EXECUTION.md` addendum steps F1-F4. Isaac Bassey must review V5 and add his half of the 0.2.0 line in `decisions.md` §3.
-- **Waiting on:** the user (commit and PR approval); Isaac Bassey (contract 0.2.0 and the V5 migration review).
+- **Next action:** get PR #14 reviewed and merged, then follow `EXECUTION.md` addendum steps F1-F4 (deploy applies V5; then check live: refresh, employee view, itemised estimate, phone layout). Isaac Bassey must review V5 and add his half of the 0.2.0 line in `decisions.md` §3.
+- **Waiting on:** Isaac Bassey (contract 0.2.0 and the V5 migration review, his half of the 0.2.0 line); Victor Oyeleke (screen review).
 - **Local notes:** an older uncommitted log note was stashed as `stash@{0}` ("sitrep note 2026-10-27"); it is superseded by this entry and can be dropped. Docker Desktop must be running for the service tests.
 
 ## How to continue without the sdlc skill
@@ -167,7 +167,8 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - service `./mvnw clean verify` **54 tests, 0 failures**;
   - web lint OK, typecheck OK, **91 tests passed**, build OK (one existing test caught a wording change in the employee status line; the original wording was kept).
   - **Rule removals** (`docs/rule-removal-log.md` rows 11-13): each made its test fail (R20's service check removal gave 500 instead of 400 because the trigger still refused).
-- 2026-10-29 · agent · Wrote the R15-R21 addendums to `sdlc/intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md`. Nothing is committed yet.
+- 2026-10-29 · agent · Wrote the R15-R21 addendums to `sdlc/intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md`.
+- 2026-10-29 · agent · Committed `42b68ec` on `feat/mvp-feedback` (no Claude attribution). `check-migrations.sh` and `check-contract-log.sh` are OK against `origin/main`. Pushed and opened [PR #14](https://github.com/AMAZEEN12/Genie/pull/14) (37 files), asking Isaac Bassey to review V5 and contract 0.2.0 and Victor Oyeleke to review the screens. This log note is the PR's second commit.
 
 ### Earlier "Resume here" entries (moved 2026-10-29; history, not current state)
 - **Stage:** Frontend MVP Screens Implementation Complete. All 4 design batches from `c:\Users\CHUKWUMA\Downloads\screen\screen` implemented and verified locally:
