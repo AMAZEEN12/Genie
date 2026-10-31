@@ -293,7 +293,7 @@ expected: 400
 
 ## Limits of this evidence
 - Several rules are protected twice (service code and database). Each entry lists everything that had to be removed for the test to fail. A test that fails only when both layers are removed shows that the layers overlap, which is intended.
-- Rule 1 was already shown on the branch `evidence/no-assignment-guard` (commit 606ad46). The GitHub Actions "Concurrency evidence" run link is still to be added: <link>. Rule 1 is also shown in the run above (`AssignmentConcurrencyIT` fails 10 of 10 repeated runs with `Expected size: 1 but was: 2`).
+- Rule 1 was already shown on the branch `evidence/no-assignment-guard` (commit 606ad46). The GitHub Actions "Concurrency evidence" run link is added: <https://github.com/AMAZEEN12/Genie/actions/runs/41179739775>. Rule 1 is also shown in the run above (`AssignmentConcurrencyIT` fails 10 of 10 repeated runs with `Expected size: 1 but was: 2`).
 - Rule 10 changes two Jackson settings. If a reviewer asks which one the test depends on, remove them one at a time and record the result.
 
 - Rule 8 (R7) is protected in four places: the two service checks in `RequestWorkflowService` (URGENT priority and finance review before close), the guarded UPDATE in `RequestRepository`, and the two database constraints. The test passed until all of them were removed, so the layers overlap by design.
