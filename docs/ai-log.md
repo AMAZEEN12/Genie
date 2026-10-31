@@ -11,7 +11,9 @@ Tools named in the repo history: Codex (DM10, DM11 entries), an AI coding agent 
 | 2026-10-25 | Nnaemeka | AI agent | Harden JWT and money parsing | Removed default JWT secret, fail-fast key check, strict Jackson number settings | A committed default JWT secret in `application.yml` was found at handover review and removed |
 | 2026-10-26 | Nnaemeka | AI agent | Build the four MVP screens from the design images | Shell, report form, list, detail with modals | See error 3 |
 | 2026-10-27 | Isaac | AI assistant | Review the API layer; add request-ID logging and timing-safe login | Request-ID in logs, dummy bcrypt check for unknown emails | CONFIRM with Isaac |
-| BLESSING: add your rows | Blessing | | e.g. workflows, README audit, load scripts in `load/` | | |
+| 2026-10-31 | Blessing | Claude (Anthropic) | Read the Genie repo and list what was left for me to do in Delivery and evidence | The list: fill the rule-removal log, record green re-runs, add the concurrency link, my AI-log rows, the release log | Its first claim that the 2026-10-28 rule-removal evidence was valid (see Error 4) |
+| 2026-10-31 | Blessing | Claude (Anthropic) | Find a way to run the rule-removal tests without Docker on my machine | A manual GitHub Actions workflow (`rule-removal.yml`) and `tools/rules-removal/run-on-ci.mjs` that run each removal on GitHub's runners, re-run the test after restoring, and mark Docker/start-up errors INVALID; the same fix in `run-rule-removal.ps1` | Its suggestion to run the workflow with `gh workflow run --ref` before merging: GitHub only lists workflows on `main`, so a `pull_request` trigger limited to the workflow's own files was added instead |
+| 2026-10-31 | Blessing | Claude (Anthropic) | Write the new text of `docs/rule-removal-log.md` from the CI run's `entries.md` | Output blocks, failing method names and green re-runs pasted from the run's artifact; the discarded first run is described in the log | Wording I changed myself. |
 
 ## Cases where the output was wrong (checked, found wrong)
 Drafted from the worklog. **Verify each against the commit and fill the "how I checked" field honestly.**
@@ -33,3 +35,15 @@ Drafted from the worklog. **Verify each against the commit and fill the "how I c
 - How it was checked: manual run showed a newly reported fault with the urgent-override flag; traced to Prism returning synthetic example values.
 - What was actually true: Prism examples are not real service data. The live service never returns that.
 - What was done instead: `override: false` set explicitly, localStorage sanitised, unit test added. **Open issue:** the same placeholder-detection approach still exists in `web/src/api/requests.ts` (empty live list returns hardcoded seed requests). Decide with Victor whether to remove it before the demo.
+
+### Error 4: the first rule-removal evidence was reported as valid but was not (2026-10-28, found 2026-10-31)
+- Claimed / produced: the PowerShell runner reported all ten runs as "FAILS AS EXPECTED (valid evidence)", the log's summary table said every rule "fails without the protection", and Claude repeated that in its first answer without opening the logs.
+- How it was checked: I ran `Select-String` on the ten `*-FAILS.log` files. Every failure was `Errors: N` with `ExceptionInInitializerError` / `NoClassDefFound`, and the log said `Could not find a valid Docker environment`.
+- What was actually true: Docker Desktop was not running, so the test classes crashed at start-up and no test body ran. The runner's check looked for "Cannot connect to the Docker", which is not the message Testcontainers writes.
+- What was done instead: the run was discarded and the log says so. The runner now treats Docker and start-up errors as INVALID, and all ten rules were re-run on GitHub Actions (run 41175833281) with real assertion failures.
+
+### Error 5: the removal for rule 8 (R7 override) left two protections in place (found 2026-10-31)
+- Claimed / produced: `rules.json` described rule 8 as removing the R7 protection, and the entry said the removal was complete.
+- How it was checked: the CI summary showed `STILL PASSES` for `OverrideIT` in the first run, with `Tests run: 3, Failures: 0`.
+- What was actually true: R7 is also enforced by two checks in `RequestWorkflowService` (the URGENT priority check and the finance-review-before-close check). The removal only touched the repository query and the two database constraints.
+- What was done instead: both checks were added to the removal, and the second CI run showed `OverrideIT` failing (`expected: 409 but was: 200`) and passing again after restoring.
