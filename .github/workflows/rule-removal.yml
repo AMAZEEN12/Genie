@@ -1,0 +1,47 @@
+
+# Manual. Proves each business-rule test FAILS when its protection is removed, then that it PASSES again once restored
+# (brief: Verification; docs/rule-removal-log.md). Runs on GitHub's Linux runners, which have Docker for Testcontainers.
+    # The edits (tools/rules-removal/rules.json) exist only in this job's throwaway checkout. Nothing is committed or pushed.
+    # The job is green only if every selected rule failed for the right reason (not a Docker/startup error) AND passed after restoring.
+  name: Rule removal
+  on:
+    # Runs on a pull request only when this workflow or its scripts change, so the evidence can be produced
+    # before the workflow reaches main (GitHub lists "Run workflow" only for files on the default branch).
+    pull_request:
+      paths:
+        - '.github/workflows/rule-removal.yml'
+        - 'tools/rules-removal/**'
+    workflow_dispatch:
+      inputs:
+        only:
+          description: "Rule ids to run, comma separated (e.g. 02,05). Empty = all ten."
+          default: ''
+          required: false
+
+  permissions:
+    contents: read
+
+  jobs:
+    rule-removal:
+      runs-on: ubuntu-latest
+      timeout-minutes: 120
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-java@v4
+          with: { distribution: temurin, java-version: 25, cache: maven }
+        - uses: actions/setup-node@v4
+          with: { node-version: 22 }
+        - name: Check Docker works (Testcontainers needs it)
+          run: docker info --format '{{.ServerVersion}}'
+        - name: Check every removal still applies (no Maven)
+          run: node tools/rules-removal/run-on-ci.mjs --dry ${{ inputs.only != '' && format('--only {0}', inputs.only) || '' }}
+        - name: Remove each protection, run its test, restore, re-run
+          run: |
+            chmod +x service/mvnw
+            node tools/rules-removal/run-on-ci.mjs ${{ inputs.only != '' && format('--only {0}', inputs.only) || '' }}
+        - uses: actions/upload-artifact@v4
+          if: always()
+          with:
+            name: rule-removal-evidence
+            path: rule-removal-out/
+

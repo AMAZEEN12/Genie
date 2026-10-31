@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-28T00:32:32.752Z",
+  "base": "https://genie-t2s5.onrender.com/api/v1",
+  "n": 10,
+  "tally": {
+    "200": 1,
+    "409": 9
+  },
+  "ok": true,
+  "requestId": "a0052d2f-2a33-446f-9dba-93f4440f929a",
+  "finalStatus": "ASSIGNED"
+}

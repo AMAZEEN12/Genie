@@ -51,7 +51,11 @@
       { "file": "service/src/main/resources/db/migration/V2__requests.sql",
         "find": "NOT override OR priority = 'URGENT'", "replace": "TRUE" },
       { "file": "service/src/main/resources/db/migration/V2__requests.sql",
-        "find": "status <> 'VERIFIED_CLOSED' OR NOT override OR override_review IS NOT NULL", "replace": "TRUE" } ] },
+        "find": "status <> 'VERIFIED_CLOSED' OR NOT override OR override_review IS NOT NULL", "replace": "TRUE" },
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestWorkflowService.java",
+        "find": "if (!\"URGENT\".equals(req.priority())) {", "replace": "if (false) {" },
+      { "file": "service/src/main/java/ng/tesa/genie/request/RequestWorkflowService.java",
+        "find": "if (req.override() && req.overrideReview() == null) {", "replace": "if (false) {" } ] },
   { "id": "09-R10-history-append-only", "rule": "R10 history is append-only", "test": "HistoryAppendOnlyIT",
     "edits": [
       { "file": "service/src/main/resources/db/migration/V4__append_only.sql",

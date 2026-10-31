@@ -4,9 +4,9 @@
 
    git switch main; git pull
    git switch -c scratch/rule-removal
-   .\tools\rule-removal\run-rule-removal.ps1                 # all 10 rules
-   .\tools\rule-removal\run-rule-removal.ps1 -Only 02,05     # just some
-   .\tools\rule-removal\run-rule-removal.ps1 -Only 02 -ConfirmGreen   # also re-run the test after restoring
+   .\tools\rules-removal\run-rule-removal.ps1                 # all 10 rules
+   .\tools\rules-removal\run-rule-removal.ps1 -Only 02,05     # just some
+   .\tools\rules-removal\run-rule-removal.ps1 -Only 02 -ConfirmGreen   # also re-run the test after restoring
 
  Needs: Docker running (Testcontainers), Java 25 on PATH / JAVA_HOME.
  It refuses to run unless you are on a branch named scratch/*, with a clean working tree.
@@ -70,7 +70,7 @@ foreach ($r in $rules) {
     $changed = (git diff --name-only) -join ', '
     $code = Run-Test $r.test $log
     $text = Get-Content $log -Raw
-    if ($text -match 'COMPILATION ERROR|Could not resolve|Cannot connect to the Docker|ApplicationContext failure threshold') {
+    if ($text -match 'COMPILATION ERROR|Could not resolve|Cannot connect to the Docker|Could not find a valid Docker environment|ExceptionInInitializerError|NoClassDefFound|ApplicationContext failure threshold') {
       $verdict = 'INVALID (compile/setup/Docker error, not evidence)'
     } elseif ($code -eq 0) {
       $verdict = 'STILL PASSES (protection not fully removed, or the test proves nothing)'
