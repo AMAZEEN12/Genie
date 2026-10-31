@@ -25,7 +25,7 @@ Candidate skills to write: shared with Stockwise ("money in kobo", "guards in SQ
 ## Setup before automation starts
 - [ ] Public GitHub repository for Genie; branch protection, CODEOWNERS and the `production` environment, copied from Stockwise. (Blessing) *Partly done, 2026-10-31:* repository and CODEOWNERS exist (every path is owned by `@AMAZEEN12`, left as is on purpose); `production` environment has required reviewers Blessing Nwafor and Isaac Bassey. **Branch protection on `main` is not set.**
 - [x] Neon project `genie`; Render service `genie-api` (Docker, auto-deploy off); Vercel project `genie-web`; Qocent projects tracking `deploy/genie-*`. (Blessing) *Done 2026-10-31 for Neon, Render (its own workspace) and Vercel. Qocent is not used: Stack V is the official stack (DM5, Qocent funding pending).*
-- [ ] CI jobs: test-guard, contract-log, frozen-migration and undo-script checks, gitleaks, JaCoCo gate. (Blessing) *Partly done, 2026-10-31:* all of these exist in `ci.yml` except the **JaCoCo coverage gate** (80% on the rule packages, DM5), which has not been added.
+- [x] CI jobs: test-guard, contract-log, frozen-migration and undo-script checks, gitleaks, JaCoCo gate. (Blessing) *Done 2026-10-31:* the JaCoCo gate is in `service/pom.xml` (rule packages `request` and `estimate` must each reach 80% line coverage; `./mvnw verify` fails otherwise). First CI run passed: `request` 348 of 387 lines (about 90%), `estimate` 87 of 94 (about 93%). The gate has not yet been seen failing (no deliberate-failure test was run).
 - [x] README "Free tier terms checked" table (from deploy-plan §1, dated). (Blessing) *Done: `README.md`, dated 2026-10-23.*
 
 ## Steps
