@@ -23,10 +23,10 @@ Change slug: `genie` · Last updated: 2026-10-23 · Current stage: Build (implem
 Candidate skills to write: shared with Stockwise ("money in kobo", "guards in SQL", "decision logging"). Also **"status machine in SQL"**: every transition is one guarded UPDATE plus a history insert. Owner: Nnaemeka Chukwuma. Hard guardrail: yes, via a review pass and one test per transition.
 
 ## Setup before automation starts
-- [ ] Public GitHub repository for Genie; branch protection, CODEOWNERS and the `production` environment, copied from Stockwise. (Blessing)
-- [ ] Neon project `genie`; Render service `genie-api` (Docker, auto-deploy off); Vercel project `genie-web`; Qocent projects tracking `deploy/genie-*`. (Blessing)
-- [ ] CI jobs: test-guard, contract-log, frozen-migration and undo-script checks, gitleaks, JaCoCo gate. (Blessing)
-- [ ] README "Free tier terms checked" table (from deploy-plan §1, dated). (Blessing)
+- [ ] Public GitHub repository for Genie; branch protection, CODEOWNERS and the `production` environment, copied from Stockwise. (Blessing) *Partly done, 2026-10-31:* repository and CODEOWNERS exist (every path is owned by `@AMAZEEN12`, left as is on purpose); `production` environment has required reviewers Blessing Nwafor and Isaac Bassey. **Branch protection on `main` is not set.**
+- [x] Neon project `genie`; Render service `genie-api` (Docker, auto-deploy off); Vercel project `genie-web`; Qocent projects tracking `deploy/genie-*`. (Blessing) *Done 2026-10-31 for Neon, Render (its own workspace) and Vercel. Qocent is not used: Stack V is the official stack (DM5, Qocent funding pending).*
+- [ ] CI jobs: test-guard, contract-log, frozen-migration and undo-script checks, gitleaks, JaCoCo gate. (Blessing) *Partly done, 2026-10-31:* all of these exist in `ci.yml` except the **JaCoCo coverage gate** (80% on the rule packages, DM5), which has not been added.
+- [x] README "Free tier terms checked" table (from deploy-plan §1, dated). (Blessing) *Done: `README.md`, dated 2026-10-23.*
 
 ## Steps
 Each step: actor · input → action → output · gate before the next step.
@@ -101,7 +101,7 @@ rollback:   as in deploy-plan.md §3-§4 (Vercel rollback, Render rollback, Qoce
 |----------|---------------|-------|----------------|
 | Can both MVPs realistically be ready Monday? If not, tell Goodnews today | intent.md | Isaac Bassey | 1 (today) |
 | Qocent funding (Stockwise PD5a): until settled, Stack V is official | intent.md, deploy-plan | Isaac Bassey + Goodnews | 4 |
-| Separate Render workspace for Genie (Stockwise PD5c) | intent.md | Blessing Nwafor | 4 |
+| Separate Render workspace for Genie (Stockwise PD5c). **Resolved 2026-10-31: Genie has its own Render workspace** | intent.md | Blessing Nwafor | 4 |
 | Spring Boot 4-compatible contract validator (follows the Stockwise answer) | test-plan.md | Isaac Bassey | 7 |
 
 ## Addendum 2026-10-29: MVP feedback (R15-R21)
