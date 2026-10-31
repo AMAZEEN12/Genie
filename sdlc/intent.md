@@ -63,7 +63,7 @@ Payments and accounting. Email via Resend, downloadable reports and cost analyti
 ## Open questions
 - [ ] Can the team realistically finish Genie's MVP by Monday alongside Stockwise? If not, Isaac Bassey tells Goodnews **today (Fri 23 Oct)**. (owner: Isaac Bassey) · UNRESOLVED
 - [ ] Is Qocent funded (Stockwise PD5a)? Until it is, Genie's official address is Vercel + Render + Neon. (owner: Isaac Bassey + Goodnews) · UNRESOLVED
-- [ ] Render free hours: a separate Render workspace for Genie (Stockwise PD5c)? (owner: Blessing Nwafor) · UNRESOLVED
+- [x] Render free hours: a separate Render workspace for Genie (Stockwise PD5c)? (owner: Blessing Nwafor) · RESOLVED 2026-10-31: yes, Genie has its own Render workspace
 
 ## Measurement
 - Leading: time from the first conversation to an accepted intent.md (git timestamps).

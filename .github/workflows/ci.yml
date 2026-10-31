@@ -80,6 +80,7 @@ jobs:
           path: |
             service/target/surefire-reports
             service/target/failsafe-reports
+            service/target/site/jacoco
           if-no-files-found: ignore
 
   web:
