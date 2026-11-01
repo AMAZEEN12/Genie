@@ -6,25 +6,36 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Implementation, Role-Based Receipt Uploads with Cloudinary (R22-R30), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM20-DM21). Proposed by Victor Oyeleke / specification document; implemented, verified, and signed by Nnaemeka Chukwuma (Data and rules owner).
-- **Step:** Implemented and verified locally on branch `feat/receipt-uploads` (from `origin/main` via `6a072de`):
-  1. **R22 Private Cloudinary Receipt Uploads:** Added Cloudinary Java SDK `com.cloudinary:cloudinary-http44:1.39.0`. Byte-level format verification for JPEG (`FF D8 FF`), PNG (`89 50 4E 47`), WebP (`RIFF...WEBP`), and PDF (`%PDF-`) in `FileValidationService`, rejecting `.exe` and corrupted files with 400 `INVALID_FILE_TYPE`. Re-encodes raster images via `BufferedImage` / `ImageIO` to strip GPS and device EXIF metadata while preserving PNG transparency. Files uploaded to Cloudinary as `type: authenticated`, `resource_type: auto` into `genie/receipts/<orgId>`. Never exposes Cloudinary public ID, upload URL, or secrets to client.
-  2. **R23 Access-Controlled Streaming:** `GET /api/v1/receipts/{id}/file` generates a server-side signed URL and streams bytes directly back with `Cache-Control: private, no-store` and `X-Content-Type-Options: nosniff`.
-  3. **R24 Tenant and Role Isolation:** Scopes by same organisation first, then role/relationship. Returns 404 (not 403) for denied reads to prevent ID fishing/enumeration (Technician sees own; Manager sees direct reports; Finance sees all within organisation; different org returns 404).
-  4. **R25 Manager Decision Protection:** Manager approves/rejects direct reports' receipts only (`PUT/POST /receipts/{id}/decision`). Self-approval rejected with 403 `SELF_APPROVAL`. Invalid transitions return 409 `RECEIPT_INVALID_TRANSITION`.
-  5. **R26 Finance Reimbursement Guard:** Finance marks approved receipts as reimbursed (`PUT/POST /receipts/{id}/reimburse`). Unapproved receipts return 409 `RECEIPT_NOT_APPROVED`.
-  6. **R27 Deletion Policy:** Uploader deletes while status is `submitted` (403 once approved); Finance deletes any receipt in org at any time. Deletes asset from Cloudinary with cache invalidation (`invalidate = true`) and removes from DB.
-  7. **R28 Upload Rate Limiting:** In-memory sliding-window rate limiting per user and per IP (10 uploads/min, 429 `RATE_LIMIT_EXCEEDED`).
-  8. **R29 Audit Trail Logging:** State transitions, views, and deletions logged to `receipt_audit_log` (`UPLOAD`, `VIEW`, `DECISION`, `REIMBURSE`, `DELETE`).
-  9. **R30 Information Leak Prevention:** RFC 9457 error bodies and responses never expose Cloudinary credentials, stack traces, or signed URLs.
-  10. **Database Migration V6 & Undo U6:** Added `org_id` and `manager_id` to `app_user`; created `receipt` and `receipt_audit_log` with database constraints (`chk_receipt_manager_decision`, `chk_receipt_no_self_approve`, `chk_receipt_reimbursed`). Undo U6 drops them cleanly.
+- **Stage:** Full-Stack Implementation Complete (Backend + Frontend), Role-Based Receipt Uploads with Cloudinary (R22-R30), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM20-DM21). Proposed by Victor Oyeleke / specification document; implemented, verified, and signed by Nnaemeka Chukwuma (Data and rules owner).
+- **Step:** Implemented and verified locally across backend and frontend on branch `feat/receipt-uploads` (from `origin/main` via `6a072de`):
+  1. **Backend Implementation (R22-R30):**
+     - Cloudinary Java SDK `cloudinary-http44:1.39.0`, private authenticated storage type in `genie/receipts/<orgId>`.
+     - Byte-level format verification (JPEG, PNG, WebP, PDF) and EXIF metadata stripping via `BufferedImage` / `ImageIO`.
+     - Multi-tenant scoping and role permissions: 404 for denied reads, self-approval blocked (403), finance reimbursement guard on approved receipts (409), rate limit 10/min (429).
+     - Streaming endpoint `GET /receipts/{id}/file` with signed Cloudinary URL and `Cache-Control: private, no-store`. Zero leakage of Cloudinary public IDs, URLs, or secrets.
+     - Flyway migration V6 and rollback script U6 (`receipt`, `receipt_audit_log`, `org_id`/`manager_id`).
+     - 13 backend integration tests in `ReceiptWorkflowIT` covering all Section 8 scenarios.
+  2. **Frontend Implementation (R22-R30):**
+     - Regenerated TypeScript schema from OpenAPI 0.3.0 (`npm run generate:api`).
+     - Strongly typed receipt models (`service/models/receipt.models.ts`) and endpoint builders (`service/endpoints/endpoints.ts`).
+     - HTTP client enhanced (`service/httpclient/client.ts`) for `FormData` multipart uploads and `apiBlobRequest` binary streaming.
+     - API client and mock persistence (`service/api/receipts.api.ts`, `api/receipts.ts`) with realistic seed data and localStorage persistence.
+     - TanStack React Query hooks (`hooks/useReceipts.ts`).
+     - `UploadReceiptModal.tsx` conforming to modern-web-guidance `dialog` (`<dialog>`, drag & drop, client-side format & 10MB size validation, thumbnail preview, duplicate upload prevention).
+     - `ReceiptViewModal.tsx` streaming private receipts securely without leaking Cloudinary URLs, displaying metadata, with direct actions (Approve/Reject, Reimburse, Delete, Save file).
+     - `ReceiptsPage.tsx` with role-aware views (Technician, Manager, Finance), responsive layout conforming to modern-web-guidance `responsive-table`, status filters, search, and CSV export.
+     - Navigation `/receipts` wired in `router.tsx` and `AppLayout.tsx`.
+     - 8 unit and integration tests in `ReceiptsPage.test.tsx` verifying upload validation, stream viewing, manager approval/rejection, finance reimbursement, and deletion.
 - **Checks:**
   - service `./mvnw clean verify` gives **60 tests green, 0 failures, BUILD SUCCESS** (Docker, Postgres 17 Testcontainers, JaCoCo coverage rules met);
-  - `MigrationRollbackIT` verified up/down/up schema restoration cleanly;
-  - contract `contract/openapi.yaml` bumped to 0.3.0 and validated with `@redocly/cli lint`: **0 errors, valid**;
-  - all 9 scenarios in Section 8 of "Receipt Uploads with Cloudinary: Role-Based Backend Summary" pass in `ReceiptWorkflowIT`.
-- **Next action:** Open PR for `feat/receipt-uploads` into `main`, ask Isaac Bassey to review V6 migration and add his half of the 0.3.0 line in `decisions.md` §3, then follow `EXECUTION.md` addendum steps R4-R5.
-- **Waiting on:** Isaac Bassey (contract 0.3.0 and V6 migration review, his half of 0.3.0 line); Victor Oyeleke (screen integration for receipt uploads).
+  - web `npm test` gives **99 tests passed across 13 test files (0 failures)**;
+  - web `npm run lint` is clean (0 errors, 0 warnings);
+  - web `npm run typecheck` is clean (0 errors);
+  - web `npm run build` generates clean production assets in `dist/`;
+  - bundle audit: zero leakage of Cloudinary API keys, secrets, or URLs in production bundle;
+  - contract `contract/openapi.yaml` bumped to 0.3.0 and validated with `@redocly/cli lint`: **0 errors, valid**.
+- **Next action:** Commit frontend changes to `feat/receipt-uploads`, push branch, and open PR into `main` for team review.
+- **Waiting on:** Isaac Bassey (contract 0.3.0 and V6 migration review); Victor Oyeleke (screen review).
 - **Local notes:** Docker Desktop is running.
 
 ## How to continue without the sdlc skill
@@ -188,6 +199,17 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - `contract/openapi.yaml`: Bumped version to 0.3.0 with receipt schemas and endpoints. Validated clean with `@redocly/cli lint`: 0 errors.
   - `decisions.md`: Recorded DM20, DM21, and contract change log 0.3.0 agreed by Nnaemeka Chukwuma.
   - `sdlc/intent.md`, `sdlc/plan.md`, `sdlc/test-plan.md`, `sdlc/EXECUTION.md`: Added Addendums for 2026-11-01 (R22-R30) signed as implemented by Nnaemeka Chukwuma.
+- 2026-11-01 · agent (for Nnaemeka Chukwuma) · Implemented role-based receipt uploads frontend per specification "Receipt Uploads with Cloudinary: Role-Based Backend Summary" (R22-R30):
+  - Regenerated TypeScript schema from OpenAPI 0.3.0 (`npm run generate:api`).
+  - Added typed data models in `web/src/service/models/receipt.models.ts` and registered endpoint builders in `web/src/service/endpoints/endpoints.ts`.
+  - Extended HTTP client in `web/src/service/httpclient/client.ts` to support `FormData` multipart payloads and `apiBlobRequest` binary streaming.
+  - Built `web/src/service/api/receipts.api.ts` and `web/src/api/receipts.ts` with mock seed and `localStorage` persistence.
+  - Built TanStack React Query hooks in `web/src/hooks/useReceipts.ts`.
+  - Built `UploadReceiptModal.tsx` following modern-web-guidance `dialog` (`<dialog>`, drag & drop, client-side format & 10MB size validation, thumbnail preview, duplicate upload prevention).
+  - Built `ReceiptViewModal.tsx` streaming private receipts securely without leaking Cloudinary URLs, displaying metadata, with direct actions (Approve/Reject, Reimburse, Delete, Save file).
+  - Built `ReceiptsPage.tsx` with role-aware views (Technician, Manager, Finance), responsive layout conforming to modern-web-guidance `responsive-table` (sticky table headers, stacked mobile cards), status filters, search, and CSV export.
+  - Wired `/receipts` route in `web/src/app/router.tsx` and updated `web/src/layouts/AppLayout.tsx` nav menus for `TECHNICIAN`, `MANAGER`, and `FINANCE`.
+  - Authored 8 unit and integration tests in `web/src/features/receipts/ReceiptsPage.test.tsx` (all 99 web tests passing). Audited bundle for zero Cloudinary secrets or URL leaks.
 
 ### Earlier "Resume here" entries (moved 2026-11-01; history, not current state)
 - **Stage:** Implementation, MVP feedback (R15-R21), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM17). Proposed by Victor Oyeleke; implemented by Nnaemeka Chukwuma.

@@ -3,6 +3,7 @@ import { HomePage } from '../features/home/HomePage';
 import { ReportFaultPage } from '../features/requests/ReportFaultPage';
 import { RequestListPage } from '../features/requests/RequestListPage';
 import { RequestDetailPage } from '../features/requests/RequestDetailPage';
+import { ReceiptsPage } from '../features/receipts/ReceiptsPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
@@ -24,6 +25,7 @@ export const routes: RouteObject[] = [
         path: 'approvals',
         Component: () => <RequestListPage preset="approvals" />,
       },
+      { path: 'receipts', Component: ReceiptsPage },
       { path: '*', Component: NotFoundPage },
     ],
   },

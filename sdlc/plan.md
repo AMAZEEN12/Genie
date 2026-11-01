@@ -213,6 +213,14 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 | `service/.../receipt/FileValidationService.java`, `CloudinaryStorageService.java`, `DefaultCloudinaryStorageService.java`, `UploadRateLimiter.java` | new | R22, R23, R28 |
 | `service/.../receipt/ReceiptService.java`, `ReceiptController.java` | new | R22-R30 |
 | `service/src/test/.../receipt/ReceiptWorkflowIT.java` (13 integration tests) | new | R22-R30 |
+| `web/src/api/schema.d.ts` (regenerated for 0.3.0), `api/receipts.ts` | modified / new | R22-R30 |
+| `web/src/service/models/receipt.models.ts`, `service/endpoints/endpoints.ts` | new / modified | R22-R30 |
+| `web/src/service/httpclient/client.ts` (FormData support, `apiBlobRequest`) | modified | R22, R23 |
+| `web/src/service/api/receipts.api.ts`, `hooks/useReceipts.ts` | new | R22-R30 |
+| `web/src/features/receipts/ReceiptsPage.tsx`, `ReceiptStatusBadge.tsx`, `formatBytes.ts` | new | R22-R30 |
+| `web/src/features/receipts/modals/UploadReceiptModal.tsx`, `ReceiptViewModal.tsx` | new | R22, R23, R25-R27 |
+| `web/src/app/router.tsx` (`/receipts`), `layouts/AppLayout.tsx` (nav items) | modified | R24 |
+| `web/src/features/receipts/ReceiptsPage.test.tsx` (8 unit & integration tests) | new | R22-R30 |
 
 ### Risks
 | Risk | What it could break | Mitigation |
@@ -223,4 +231,4 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 | Heavy receipt files exhaust memory | Service OOM | 10MB file cap; streamed I/O via `InputStreamResource` without buffering entire files in memory |
 
 ### Proof
-All 13 integration test scenarios in `ReceiptWorkflowIT` pass cleanly against Testcontainers PostgreSQL 17, and `MigrationRollbackIT` passes up/down/up schema restoration. Full test suite verifies 60 tests passing with JaCoCo rule coverage met.
+All 13 integration test scenarios in `ReceiptWorkflowIT` pass cleanly against Testcontainers PostgreSQL 17, and `MigrationRollbackIT` passes up/down/up schema restoration (60 tests passed). Web frontend test suite passes 99/99 tests across 13 test files (`npm test`), TypeScript compiles cleanly (`tsc --noEmit`), ESLint passes with 0 warnings (`eslint . --max-warnings 0`), and production build succeeds (`npm run build`) with zero leaks of Cloudinary credentials or URLs.

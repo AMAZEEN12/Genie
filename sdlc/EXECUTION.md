@@ -124,7 +124,8 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 | R1 | Implement backend receipt upload architecture (Cloudinary Java SDK, private delivery type, metadata stripping, streaming without exposing Cloudinary URLs) | Nnaemeka Chukwuma | 13 integration tests in `ReceiptWorkflowIT` passing |
 | R2 | Database migration V6 (app_user org_id/manager_id, receipt, receipt_audit_log) and undo U6 | Nnaemeka Chukwuma | `MigrationRollbackIT` up/down/up clean restoration |
 | R3 | OpenAPI Contract 0.3.0 update | Nnaemeka Chukwuma | Redocly CLI lint 0 errors |
-| R4 | Review PR from `feat/receipt-uploads` | Isaac Bassey (contract 0.3.0, V6 migration, security policies) | Code-owner approval; Isaac adds his half of the 0.3.0 line in `decisions.md` §3 |
-| R5 | Merge to `main` and deploy | Isaac Bassey (release manager) | Automated CI checks green (migrations, redocly lint, tests) |
+| R4 | Implement frontend receipt screens & modals (upload with client validation and preview, private stream viewing, role actions, CSV export) | Nnaemeka Chukwuma | 99/99 web tests passing, lint/typecheck clean, zero bundle leaks |
+| R5 | Review PR from `feat/receipt-uploads` | Isaac Bassey (contract 0.3.0, V6 migration, security policies) | Code-owner approval; Isaac adds his half of the 0.3.0 line in `decisions.md` §3 |
+| R6 | Merge to `main` and deploy | Isaac Bassey (release manager) | Automated CI checks green (migrations, redocly lint, tests) |
 
 Rollback: `./mvnw -Pundo -Dundo.target=5 exec:java` removes V6; reverses receipt tables and restores V5 schema.

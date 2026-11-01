@@ -251,6 +251,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List accessible receipts
+         * @description Filtered by role - Technician sees own receipts; Manager sees own and direct reports; Finance sees all in org.
+         */
+        get: operations["listReceipts"];
+        put?: never;
+        /**
+         * Upload receipt file
+         * @description Technician, Manager, or Finance. Uploads private authenticated receipt to Cloudinary, stripping location and device metadata.
+         */
+        post: operations["uploadReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get receipt metadata
+         * @description Returns receipt metadata. Access check requires same organisation first, then role/relationship (404 if denied).
+         */
+        get: operations["getReceipt"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete receipt
+         * @description Uploader while submitted, or Finance at any time in org. Also deletes from Cloudinary and invalidates cached copy.
+         */
+        delete: operations["deleteReceipt"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream receipt file
+         * @description Streams private receipt through backend with signed URL. Sets Cache-Control private, no-store and X-Content-Type-Options nosniff.
+         */
+        get: operations["streamReceiptFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Approve or reject receipt
+         * @description Manager only. Direct reports only, never their own receipt (403). Transitions submitted to approved or rejected (409 if invalid).
+         */
+        put: operations["decideReceipt"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{id}/reimburse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark receipt as reimbursed
+         * @description Finance only. Approved receipts only (409 if not approved).
+         */
+        put: operations["reimburseReceipt"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -496,6 +604,37 @@ export interface components {
                 message: string;
             }[];
         };
+        /** @enum {string} */
+        ReceiptStatus: "submitted" | "approved" | "rejected" | "reimbursed";
+        Receipt: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: uuid */
+            uploadedBy: string;
+            /** Format: uuid */
+            managerId?: string;
+            status: components["schemas"]["ReceiptStatus"];
+            /** @example hvac_filter_invoice.pdf */
+            originalName: string;
+            /** @example 1048576 */
+            bytes: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            reimbursedBy?: string;
+            /** Format: date-time */
+            reimbursedAt?: string;
+        };
+        ReceiptDecisionRequest: {
+            /** @enum {string} */
+            status: "approved" | "rejected";
+        };
     };
     responses: {
         /** @description Bad request or input validation failure */
@@ -550,6 +689,16 @@ export interface components {
         };
         /** @description Idempotency key reused with different payload */
         UnprocessableEntity: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description Upload rate limit exceeded */
+        TooManyRequests: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
                 [name: string]: unknown;
@@ -1004,6 +1153,222 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listReceipts: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of receipts */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    uploadReceipt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description Receipt file (JPEG, PNG, WebP, or PDF up to 10MB)
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Receipt uploaded successfully */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getReceipt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receipt details */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteReceipt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receipt deleted */
+            204: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    streamReceiptFile: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receipt file binary stream */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: string;
+                    "X-Content-Type-Options"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                    "image/webp": string;
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    decideReceipt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Decision applied */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    reimburseReceipt: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional client request UUID echoed back in the response. */
+                "X-Request-Id"?: components["parameters"]["RequestId"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receipt marked as reimbursed */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
 }

@@ -104,8 +104,13 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 | R29 Audit Trail Logging | `ReceiptWorkflowIT.test13_audit_trail_logging` (asserts `UPLOAD`, `VIEW`, `DECISION`, `REIMBURSE`, `DELETE` logged to `receipt_audit_log`) | integration (Database audit trail) |
 | R30 Leak Prevention | `ReceiptWorkflowIT.test9_inspect_responses_no_secret_no_api_key_no_cloudinary_url` | integration (Response payload audit) |
 | Migration Rollback (V6/U6) | `MigrationRollbackIT` (V6/U6 schema restoration up/down/up verified) | integration (Flyway / Postgres 17) |
+| Frontend Role Screens & Modals (R22-R30) | `ReceiptsPage.test.tsx` (8 tests: technician upload, validation, stream preview, manager decision & self-approval guard, finance reimburse & CSV export, deletion) | unit & integration (Vitest, React Testing Library) |
 
 ### Results 2026-11-01 (Nnaemeka Chukwuma's machine, agent-run)
 - `cd service && ./mvnw clean verify`: **60 tests passed, 0 failures, BUILD SUCCESS** (Postgres 17 Testcontainers, JaCoCo coverage rules met).
+- `cd web && npm test`: **99 tests passed across 13 test files, 0 failures**.
+- `cd web && npm run lint`: **0 errors, 0 warnings (clean)**.
+- `cd web && npm run typecheck`: **0 errors (clean)**.
+- `cd web && npm run build`: **production build clean, zero bundle leaks**.
 - `cd genie && cmd.exe /c "npx @redocly/cli lint contract/openapi.yaml"`: **0 errors, contract valid**.
 - **Section 8 Scenarios:** All 9 testing points from the summary document verified passing in `ReceiptWorkflowIT`.
