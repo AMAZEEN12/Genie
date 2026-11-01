@@ -17,6 +17,7 @@ The brief requires reading each provider's own pages and recording what was foun
 | Neon | neon.com/pricing | Free plan is permanent with no card. 100 projects per organisation, **1 GB storage per project** (writes are blocked above that), **100 CU-hours per project per month** (compute is suspended until the next period when exceeded), scale to zero after 5 min (can't be turned off), 10 branches per project, connection pooling included. | Whether inactive projects are paused. |
 | Vercel | vercel.com/pricing | Hobby is "for personal, non-commercial use", with 1 developer seat, 100 GB/month data transfer, unlimited deployments, and hard usage caps. | Whether a GitHub **organisation** repository can deploy on Hobby. CLI and Actions specifics (limits documentation). |
 
+
 **Conclusions:**
 - **Don't use Render Postgres.** It expires after 30 days, which falls inside our window if it's created early. Use Neon for the database in both stacks.
 - **Render's 750 hours are per workspace.** Two always-awake services would use 1,488 h in a 31-day month, which is over the limit. Because services sleep when idle, two products on one workspace are probably fine, but don't run a keep-alive pinger on both. Safer still: **one Render workspace per product**.
@@ -99,7 +100,9 @@ The brief requires **two live addresses per product** (interface + service). Rec
 | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | GitHub Actions |
 | `RENDER_DEPLOY_HOOK_*` or `RENDER_API_KEY` | GitHub Actions |
 | Qocent deploy-branch push credential | GitHub Actions (deploy key) |
+| `CLOUDINARY_URL` | Render service env only (never the web, GitHub or the repo). If it is ever exposed, regenerate the API secret in Cloudinary and update Render |
 CI runs a secret scan (e.g. gitleaks), and a finding fails the build.
+
 
 ## 8. Open items
 - PD5a: is Qocent usage funded? By whom, and with how many credits? (owner: Isaac Bassey with Goodnews)

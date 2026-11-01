@@ -147,6 +147,7 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - `origin/main` is `4de0e94`; PRs #12 (screens) and #13 (rule-removal log) are merged;
   - the live `genie-sigma-two.vercel.app/requests` returns Vercel's `NOT_FOUND` on refresh, and there is no `web/vercel.json`;
   - Finance's blank Role Actions came from the older local branch; `main` already shows the buttons.
+- 2026-10-30 · Blessing Nwafor (with an AI assistant) · Prepared Cloudinary for the optional receipts/photos Should: account and upload preset `Genie-receipt-upload` created, `CLOUDINARY_URL` set on the Render service. Documented the variable names in README (Configuration Reference, free-tier table), `deploy-plan.md` §7 and `web/.env.example`. No code uses it yet.
 
   Stashed the old uncommitted log note and branched `feat/mvp-feedback` from `origin/main`.
 - 2026-10-29 · agent · Web (R16-R19, R21):

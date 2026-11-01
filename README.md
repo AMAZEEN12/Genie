@@ -62,6 +62,7 @@ The capstone brief requires auditing each cloud provider's official pricing and 
 | **Render** | render.com/docs/free | A free web service spins down after **15 min** idle and takes **about 1 min** to spin up. **750 free instance hours per workspace per month**, and all free services are suspended when they run out. Ephemeral filesystem. Render may restart the service at any time. Free Postgres **expires after 30 days** (plus a 14-day grace period) and allows one per workspace. | RAM and CPU for free instances. Docker on free (see `/docs/docker`). Deploy hooks. |
 | **Neon** | neon.com/pricing | Free plan is permanent with no card. 100 projects per organisation, **1 GB storage per project** (writes are blocked above that), **100 CU-hours per project per month** (compute is suspended until the next period when exceeded), scale to zero after 5 min (can't be turned off), 10 branches per project, connection pooling included. | Whether inactive projects are paused. |
 | **Vercel** | vercel.com/pricing | Hobby is "for personal, non-commercial use", with 1 developer seat, 100 GB/month data transfer, unlimited deployments, and hard usage caps. | Whether a GitHub **organisation** repository can deploy on Hobby. CLI and Actions specifics (limits documentation). |
+| **Cloudinary** | cloudinary.com/pricing (<date you read it>) | <the free plan limits you read> | <what is still to verify, for example whether the free credits cover receipt storage and delivery for the demo> |
 
 ### Provider Conclusions & Operational Guardrails:
 1. **Never use Render Postgres**: expires after 30 days. Neon is used exclusively for PostgreSQL.
@@ -115,3 +116,6 @@ cd web && npm run lint && npm run typecheck && npm test && npm run build
 | `DATABASE_USERNAME`, `DATABASE_PASSWORD` | service | `genie` / `genie` | Database credentials |
 | `JWT_SECRET` | service | Required (fail fast if empty) | HMAC-SHA secret (>= 32 bytes) for auth tokens |
 | `VITE_API_BASE_URL` | web | `http://127.0.0.1:4711` | API base URL for client queries |
+| `CLOUDINARY_URL` | service | none | **Secret.** `cloudinary://<api_key>:<api_secret>@<cloud_name>`. Render only; never Vercel, GitHub or the repo. Receipts and photos are a Should and not built yet |
+| `CLOUDINARY_UPLOAD_PRESET` | service | none | Name of the receipts upload preset. Not a secret. Not used by any code yet |
+| `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET` | web | none | Only for direct browser uploads. Public, not secrets. Not used yet |
