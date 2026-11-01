@@ -1,17 +1,26 @@
 openapi: 3.1.0
 info:
   title: Genie API
-  version: 0.2.0
+  version: 0.3.0
   summary: Maintenance requests from fault to verified repair (TeSA Cohort 6, Team 3 side project).
   description: |
     Contract v0.1.1 covers the **Monday 26 Oct MVP paths only** (EXECUTION.md step 2).
     v0.2.0 (MVP feedback, proposed by Victor Oyeleke) adds an optional cost breakdown to estimates
     and states what an EMPLOYEE may see (no billing data). A v0.1.1 client keeps working.
+    v0.3.0 adds role-based receipt uploads with private Cloudinary storage:
+    - Technicians, managers, and finance upload receipts via the backend (capped at 10MB; JPEG, PNG, WebP, PDF only).
+    - Images are re-encoded on the backend to strip location and device metadata.
+    - Cloudinary credentials, public IDs, and signed URLs never reach the browser.
+    - Files are streamed via GET /receipts/{id}/file with Cache-Control: private, no-store and X-Content-Type-Options: nosniff.
+    - Managers approve/reject direct reports' receipts only (never their own). Finance reimburses approved receipts.
     
-    Status sequence:
+    Status sequence for requests:
     REPORTED -> ASSIGNED -> ESTIMATE_SUBMITTED -> ESTIMATE_APPROVED -> IN_PROGRESS -> COMPLETED -> VERIFIED_CLOSED
     - Estimate rejection moves ESTIMATE_SUBMITTED -> ASSIGNED.
     - Urgent override (DM6): priority=URGENT moves ASSIGNED or ESTIMATE_SUBMITTED -> IN_PROGRESS with override=true.
+
+    Status sequence for receipts:
+    submitted -> approved | rejected -> reimbursed
     
     Conventions:
     - Every money field is an integer number of **kobo** (`x-unit: kobo`). Non-integer numbers are rejected with 400.
@@ -41,6 +50,8 @@ tags:
     description: Maintenance fault requests and lifecycle transitions
   - name: estimates
     description: Repair estimates and finance decisions
+  - name: receipts
+    description: Role-based receipt uploads and private streaming with Cloudinary
   - name: health
     description: Liveness and database reachability
 
@@ -488,6 +499,246 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /receipts:
+    post:
+      tags: [receipts]
+      operationId: uploadReceipt
+      summary: Upload receipt file
+      description: Technician, Manager, or Finance. Uploads private authenticated receipt to Cloudinary, stripping location and device metadata.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Receipt file (JPEG, PNG, WebP, or PDF up to 10MB)
+      responses:
+        '201':
+          description: Receipt uploaded successfully
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+    get:
+      tags: [receipts]
+      operationId: listReceipts
+      summary: List accessible receipts
+      description: Filtered by role - Technician sees own receipts; Manager sees own and direct reports; Finance sees all in org.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: List of receipts
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Receipt'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /receipts/{id}:
+    get:
+      tags: [receipts]
+      operationId: getReceipt
+      summary: Get receipt metadata
+      description: Returns receipt metadata. Access check requires same organisation first, then role/relationship (404 if denied).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Receipt details
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [receipts]
+      operationId: deleteReceipt
+      summary: Delete receipt
+      description: Uploader while submitted, or Finance at any time in org. Also deletes from Cloudinary and invalidates cached copy.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Receipt deleted
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /receipts/{id}/file:
+    get:
+      tags: [receipts]
+      operationId: streamReceiptFile
+      summary: Stream receipt file
+      description: Streams private receipt through backend with signed URL. Sets Cache-Control private, no-store and X-Content-Type-Options nosniff.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Receipt file binary stream
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+            Cache-Control:
+              schema:
+                type: string
+                example: private, no-store
+            X-Content-Type-Options:
+              schema:
+                type: string
+                example: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /receipts/{id}/decision:
+    put:
+      tags: [receipts]
+      operationId: decideReceipt
+      summary: Approve or reject receipt
+      description: Manager only. Direct reports only, never their own receipt (403). Transitions submitted to approved or rejected (409 if invalid).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiptDecisionRequest'
+      responses:
+        '200':
+          description: Decision applied
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /receipts/{id}/reimburse:
+    put:
+      tags: [receipts]
+      operationId: reimburseReceipt
+      summary: Mark receipt as reimbursed
+      description: Finance only. Approved receipts only (409 if not approved).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Receipt marked as reimbursed
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -583,6 +834,16 @@ components:
 
     UnprocessableEntity:
       description: Idempotency key reused with different payload
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    TooManyRequests:
+      description: Upload rate limit exceeded
       headers:
         X-Request-Id:
           $ref: '#/components/headers/RequestId'
@@ -1068,3 +1329,55 @@ components:
                 type: string
               message:
                 type: string
+
+    ReceiptStatus:
+      type: string
+      enum: [submitted, approved, rejected, reimbursed]
+
+    Receipt:
+      type: object
+      required: [id, orgId, uploadedBy, status, originalName, bytes, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        uploadedBy:
+          type: string
+          format: uuid
+        managerId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/ReceiptStatus'
+        originalName:
+          type: string
+          example: hvac_filter_invoice.pdf
+        bytes:
+          type: integer
+          example: 1048576
+        createdAt:
+          type: string
+          format: date-time
+        decidedBy:
+          type: string
+          format: uuid
+        decidedAt:
+          type: string
+          format: date-time
+        reimbursedBy:
+          type: string
+          format: uuid
+        reimbursedAt:
+          type: string
+          format: date-time
+
+    ReceiptDecisionRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]

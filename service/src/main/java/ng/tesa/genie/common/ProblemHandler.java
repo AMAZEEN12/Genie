@@ -55,6 +55,21 @@ public class ProblemHandler {
         return problem(request, e.code(), e.getMessage(), null);
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    ResponseEntity<Problem> rateLimit(RateLimitExceededException e, HttpServletRequest request) {
+        return problem(request, ErrorCode.RATE_LIMIT_EXCEEDED, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(FileValidationException.class)
+    ResponseEntity<Problem> fileValidation(FileValidationException e, HttpServletRequest request) {
+        return problem(request, e.code(), e.getMessage(), null);
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<Problem> maxUploadSize(org.springframework.web.multipart.MaxUploadSizeExceededException e, HttpServletRequest request) {
+        return problem(request, ErrorCode.FILE_TOO_LARGE, "File exceeds maximum size of 10MB.", null);
+    }
+
     @ExceptionHandler(IdempotencyKeyReusedException.class)
     ResponseEntity<Problem> idempotencyKeyReused(IdempotencyKeyReusedException e, HttpServletRequest request) {
         return problem(request, ErrorCode.IDEMPOTENCY_KEY_REUSED, e.getMessage(), null);

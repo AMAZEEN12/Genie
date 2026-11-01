@@ -21,16 +21,22 @@ public class UserRepository {
             String email,
             String passwordHash,
             String displayName,
-            Role role
+            Role role,
+            UUID orgId,
+            UUID managerId
     ) {
+        public UserWithPassword(UUID id, String email, String passwordHash, String displayName, Role role) {
+            this(id, email, passwordHash, displayName, role, CurrentUser.DEFAULT_ORG_ID, null);
+        }
+
         public CurrentUser toCurrentUser() {
-            return new CurrentUser(id, email, displayName, role);
+            return new CurrentUser(id, email, displayName, role, orgId, managerId);
         }
     }
 
     public Optional<CurrentUser> findById(UUID id) {
         return jdbc.sql("""
-                SELECT id, email, display_name, role
+                SELECT id, email, display_name, role, org_id, manager_id
                 FROM app_user
                 WHERE id = :id
                 """)
@@ -39,14 +45,16 @@ public class UserRepository {
                         rs.getObject("id", UUID.class),
                         rs.getString("email"),
                         rs.getString("display_name"),
-                        Role.valueOf(rs.getString("role"))
+                        Role.valueOf(rs.getString("role")),
+                        rs.getObject("org_id", UUID.class) != null ? rs.getObject("org_id", UUID.class) : CurrentUser.DEFAULT_ORG_ID,
+                        rs.getObject("manager_id", UUID.class)
                 ))
                 .optional();
     }
 
     public Optional<UserWithPassword> findByEmail(String email) {
         return jdbc.sql("""
-                SELECT id, email, password_hash, display_name, role
+                SELECT id, email, password_hash, display_name, role, org_id, manager_id
                 FROM app_user
                 WHERE lower(email) = lower(:email)
                 """)
@@ -56,14 +64,16 @@ public class UserRepository {
                         rs.getString("email"),
                         rs.getString("password_hash"),
                         rs.getString("display_name"),
-                        Role.valueOf(rs.getString("role"))
+                        Role.valueOf(rs.getString("role")),
+                        rs.getObject("org_id", UUID.class) != null ? rs.getObject("org_id", UUID.class) : CurrentUser.DEFAULT_ORG_ID,
+                        rs.getObject("manager_id", UUID.class)
                 ))
                 .optional();
     }
 
     public List<CurrentUser> findByRole(Role role) {
         return jdbc.sql("""
-                SELECT id, email, display_name, role
+                SELECT id, email, display_name, role, org_id, manager_id
                 FROM app_user
                 WHERE role = :role
                 ORDER BY display_name ASC
@@ -73,14 +83,16 @@ public class UserRepository {
                         rs.getObject("id", UUID.class),
                         rs.getString("email"),
                         rs.getString("display_name"),
-                        Role.valueOf(rs.getString("role"))
+                        Role.valueOf(rs.getString("role")),
+                        rs.getObject("org_id", UUID.class) != null ? rs.getObject("org_id", UUID.class) : CurrentUser.DEFAULT_ORG_ID,
+                        rs.getObject("manager_id", UUID.class)
                 ))
                 .list();
     }
 
     public List<CurrentUser> findAll() {
         return jdbc.sql("""
-                SELECT id, email, display_name, role
+                SELECT id, email, display_name, role, org_id, manager_id
                 FROM app_user
                 ORDER BY display_name ASC
                 """)
@@ -88,21 +100,29 @@ public class UserRepository {
                         rs.getObject("id", UUID.class),
                         rs.getString("email"),
                         rs.getString("display_name"),
-                        Role.valueOf(rs.getString("role"))
+                        Role.valueOf(rs.getString("role")),
+                        rs.getObject("org_id", UUID.class) != null ? rs.getObject("org_id", UUID.class) : CurrentUser.DEFAULT_ORG_ID,
+                        rs.getObject("manager_id", UUID.class)
                 ))
                 .list();
     }
 
     public UUID insert(String email, String passwordHash, String displayName, Role role) {
+        return insert(email, passwordHash, displayName, role, CurrentUser.DEFAULT_ORG_ID, null);
+    }
+
+    public UUID insert(String email, String passwordHash, String displayName, Role role, UUID orgId, UUID managerId) {
         return jdbc.sql("""
-                INSERT INTO app_user (email, password_hash, display_name, role)
-                VALUES (:email, :passwordHash, :displayName, :role)
+                INSERT INTO app_user (email, password_hash, display_name, role, org_id, manager_id)
+                VALUES (:email, :passwordHash, :displayName, :role, :orgId, :managerId)
                 RETURNING id
                 """)
                 .param("email", email.trim().toLowerCase())
                 .param("passwordHash", passwordHash)
                 .param("displayName", displayName.trim())
                 .param("role", role.name())
+                .param("orgId", orgId != null ? orgId : CurrentUser.DEFAULT_ORG_ID)
+                .param("managerId", managerId)
                 .query(UUID.class)
                 .single();
     }

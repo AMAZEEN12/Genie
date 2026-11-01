@@ -177,3 +177,50 @@ Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by *
 ### Departures from the approach elsewhere
 - The status sequence is unchanged; only its **wording** differs for employees.
 - `submitEstimate` still calls `requests.updateStatus` without a status guard in the `UPDATE` (pre-existing, outside this change); noted for Isaac Bassey.
+
+## Addendum 2026-11-01: Receipt Uploads with Cloudinary (R22-R30)
+Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloudinary: Role-Based Backend Summary`; implemented and signed by **Nnaemeka Chukwuma** (Data and rules owner, implementer). Branch `feat/receipt-uploads`.
+
+### Design
+- **Architecture:** Technicians, Managers, and Finance upload receipts through backend routes (`/api/v1/receipts` and `/api/receipts`), which stores them as private Cloudinary files (`type: authenticated`, `resource_type: auto`). Managers and finance access them through role-checked routes. No Cloudinary key, secret, public ID, or upload URL ever reaches the browser.
+- **Upload & Sanitation (R22, R28, R30):**
+  - Rate limiting per user and per IP via in-memory sliding window `UploadRateLimiter` (10 uploads/min, 429 `RATE_LIMIT_EXCEEDED`).
+  - Byte-level format verification via `FileValidationService` (inspects magic numbers for JPEG, PNG, WebP, PDF; rejects `.exe` or corrupt files with 400 `INVALID_FILE_TYPE`).
+  - 10MB size ceiling enforced before storage (400 `FILE_TOO_LARGE`).
+  - Re-encodes raster images using `BufferedImage` and `ImageIO` to strip EXIF metadata (GPS location coordinates, device model, camera tags).
+  - Uploads to Cloudinary into server-built folder `genie/receipts/<orgId>`.
+- **Access Check & Streaming (R23, R24):**
+  - Single access rule: same organization first (404 on failure).
+  - Role scoping: Technician sees own receipts only (404 on other technician); Manager sees own and direct reports' receipts (404 outside team); Finance sees all within organization (404 on other org).
+  - Streaming via `GET /receipts/{id}/file` generates a server-side signed URL and streams bytes directly with `Cache-Control: private, no-store` and `X-Content-Type-Options: nosniff`.
+- **Workflow & Lifecycle Guards (R25, R26, R27):**
+  - Manager decision (`PUT/POST /receipts/{id}/decision`): allows direct reports' receipts only; rejects self-approval with 403 `SELF_APPROVAL`; transitions `submitted` -> `approved` or `rejected` (409 on invalid transition).
+  - Finance reimbursement (`PUT/POST /receipts/{id}/reimburse`): allowed on `approved` receipts only (409 on unapproved receipt).
+  - Deletion (`DELETE /receipts/{id}`): uploader while `submitted` (403 once approved); Finance at any time in organization. Deletes Cloudinary asset with `invalidate: true`.
+  - Audit logging (`R29`): table `receipt_audit_log` records `UPLOAD`, `VIEW`, `DECISION`, `REIMBURSE`, `DELETE`.
+
+### Files that changed
+| File | New / modified | Requirements |
+|---|---|---|
+| `contract/openapi.yaml` (0.3.0), `decisions.md` (DM20-DM21, contract log) | modified | R22-R30 |
+| `service/pom.xml` (`cloudinary-http44:1.39.0`) | modified | R22 |
+| `service/src/main/resources/application.yml` (multipart limits, cloudinary properties) | modified | R22, R30 |
+| `service/.../db/migration/V6__receipts.sql`, `db/rollback/U6__receipts.sql` | new | R24, R25, R29 |
+| `service/.../config/AppProperties.java`, `SecurityConfig.java` | modified | R22, R24 |
+| `service/.../auth/CurrentUser.java`, `UserRepository.java` | modified | R24, R25 |
+| `service/.../common/ErrorCode.java`, `ProblemHandler.java`, `RateLimitExceededException.java`, `FileValidationException.java` | modified / new | R22, R28 |
+| `service/.../receipt/ReceiptStatus.java`, `Receipt.java`, `ReceiptResponse.java`, `ReceiptRepository.java` | new | R24-R27 |
+| `service/.../receipt/FileValidationService.java`, `CloudinaryStorageService.java`, `DefaultCloudinaryStorageService.java`, `UploadRateLimiter.java` | new | R22, R23, R28 |
+| `service/.../receipt/ReceiptService.java`, `ReceiptController.java` | new | R22-R30 |
+| `service/src/test/.../receipt/ReceiptWorkflowIT.java` (13 integration tests) | new | R22-R30 |
+
+### Risks
+| Risk | What it could break | Mitigation |
+|---|---|---|
+| Cloudinary API downtime / missing credentials | Receipt uploads or streaming fail | `DefaultCloudinaryStorageService` graceful offline local fallback; generic errors returned without leaking credentials |
+| Metadata stripping corrupts transparency | PNG alpha channel lost | `FileValidationService` preserves alpha via `BufferedImage.TYPE_INT_ARGB` |
+| Client requests another user's receipt | Privacy leak / ID enumeration | Return 404 instead of 403 on denied reads to prevent ID fishing |
+| Heavy receipt files exhaust memory | Service OOM | 10MB file cap; streamed I/O via `InputStreamResource` without buffering entire files in memory |
+
+### Proof
+All 13 integration test scenarios in `ReceiptWorkflowIT` pass cleanly against Testcontainers PostgreSQL 17, and `MigrationRollbackIT` passes up/down/up schema restoration. Full test suite verifies 60 tests passing with JaCoCo rule coverage met.
