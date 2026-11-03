@@ -1,29 +1,42 @@
 # Work log: Genie (Team 3 side project)
 
-Change slug: `genie` · Started: 2026-10-23 · Last updated: 2026-10-25 by the agent
-Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Genie is product 7, pages 19-20; "Side project standard" page 14)
+Change slug: `genie` · Started: 2026-10-23 · Last updated: 2026-11-01 by Nnaemeka Chukwuma
+Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Genie is product 7, pages 19-20; "Side project standard" page 14); `Receipt Uploads with Cloudinary: Role-Based Backend Summary`
 
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Implementation, MVP feedback (R15-R21), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM17). Proposed by Victor Oyeleke; implemented by Nnaemeka Chukwuma.
-- **Step:** All seven items are implemented and verified locally on branch `feat/mvp-feedback` (from `origin/main` `4de0e94`), committed as `42b68ec` and open as [PR #14](https://github.com/AMAZEEN12/Genie/pull/14) into `main`.
-  1. **R15** Employees see nothing about billing: service redaction (`RequestDetailResponse.forViewer`, `StatusHistoryEntry.visibleTo`) plus screens (cost card, actual cost and finance review hidden; neutral labels "Awaiting approval", "Approved for repair").
-  2. **R16** Navbar right-aligned on small screens.
-  3. **R17** Logo "i" sized in `em`.
-  4. **R18** Hero centred on small screens.
-  5. **R19** Refresh fixed by `web/vercel.json` (live `/requests` returned Vercel's 404).
-  6. **R20** Itemised estimates: V5 `estimate_line` with deferred triggers, contract 0.2.0, line-item form with integer-kobo parsing, and lines shown to Finance.
-  7. **R21** Finance Role Actions never blank (already fixed on `main` by PR #12; now tested across every status).
+- **Stage:** Full-Stack Implementation Complete (Backend + Frontend), Role-Based Receipt Uploads with Cloudinary (R22-R30), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM20-DM21). Proposed by Victor Oyeleke / specification document; implemented, verified, and signed by Nnaemeka Chukwuma (Data and rules owner).
+- **Step:** Implemented and verified locally across backend and frontend on branch `feat/receipt-uploads` (from `origin/main` via `6a072de`):
+  1. **Backend Implementation (R22-R30):**
+     - Cloudinary Java SDK `cloudinary-http44:1.39.0`, private authenticated storage type in `genie/receipts/<orgId>`.
+     - Byte-level format verification (JPEG, PNG, WebP, PDF) and EXIF metadata stripping via `BufferedImage` / `ImageIO`.
+     - Multi-tenant scoping and role permissions: 404 for denied reads, self-approval blocked (403), finance reimbursement guard on approved receipts (409), rate limit 10/min (429).
+     - Streaming endpoint `GET /receipts/{id}/file` with signed Cloudinary URL and `Cache-Control: private, no-store`. Zero leakage of Cloudinary public IDs, URLs, or secrets.
+     - Flyway migration V6 and rollback script U6 (`receipt`, `receipt_audit_log`, `org_id`/`manager_id`).
+     - 13 backend integration tests in `ReceiptWorkflowIT` covering all Section 8 scenarios.
+  2. **Frontend Implementation (R22-R30):**
+     - Regenerated TypeScript schema from OpenAPI 0.3.0 (`npm run generate:api`).
+     - Strongly typed receipt models (`service/models/receipt.models.ts`) and endpoint builders (`service/endpoints/endpoints.ts`).
+     - HTTP client enhanced (`service/httpclient/client.ts`) for `FormData` multipart uploads and `apiBlobRequest` binary streaming.
+     - API client and mock persistence (`service/api/receipts.api.ts`, `api/receipts.ts`) with realistic seed data and localStorage persistence.
+     - TanStack React Query hooks (`hooks/useReceipts.ts`).
+     - `UploadReceiptModal.tsx` conforming to modern-web-guidance `dialog` (`<dialog>`, drag & drop, client-side format & 10MB size validation, thumbnail preview, duplicate upload prevention).
+     - `ReceiptViewModal.tsx` streaming private receipts securely without leaking Cloudinary URLs, displaying metadata, with direct actions (Approve/Reject, Reimburse, Delete, Save file).
+     - `ReceiptsPage.tsx` with role-aware views (Technician, Manager, Finance), responsive layout conforming to modern-web-guidance `responsive-table`, status filters, search, and CSV export.
+     - Navigation `/receipts` wired in `router.tsx` and `AppLayout.tsx`.
+     - 8 unit and integration tests in `ReceiptsPage.test.tsx` verifying upload validation, stream viewing, manager approval/rejection, finance reimbursement, and deletion.
 - **Checks:**
-  - service `./mvnw clean verify` gives **54 tests green**;
-  - web lint, typecheck, **91 tests** and the build are green;
-  - contract lint is valid;
-  - new tests were seen failing on the old code;
-  - three rule removals are logged (rows 11-13 in `docs/rule-removal-log.md`).
-- **Next action:** get PR #14 reviewed and merged, then follow `EXECUTION.md` addendum steps F1-F4 (deploy applies V5; then check live: refresh, employee view, itemised estimate, phone layout). Isaac Bassey must review V5 and add his half of the 0.2.0 line in `decisions.md` §3.
-- **Waiting on:** Isaac Bassey (contract 0.2.0 and the V5 migration review, his half of the 0.2.0 line); Victor Oyeleke (screen review).
-- **Local notes:** an older uncommitted log note was stashed as `stash@{0}` ("sitrep note 2026-10-27"); it is superseded by this entry and can be dropped. Docker Desktop must be running for the service tests.
+  - service `./mvnw clean verify` gives **60 tests green, 0 failures, BUILD SUCCESS** (Docker, Postgres 17 Testcontainers, JaCoCo coverage rules met);
+  - web `npm test` gives **99 tests passed across 13 test files (0 failures)**;
+  - web `npm run lint` is clean (0 errors, 0 warnings);
+  - web `npm run typecheck` is clean (0 errors);
+  - web `npm run build` generates clean production assets in `dist/`;
+  - bundle audit: zero leakage of Cloudinary API keys, secrets, or URLs in production bundle;
+  - contract `contract/openapi.yaml` bumped to 0.3.0 and validated with `@redocly/cli lint`: **0 errors, valid**.
+- **Next action:** Commit frontend changes to `feat/receipt-uploads`, push branch, and open PR into `main` for team review.
+- **Waiting on:** Isaac Bassey (contract 0.3.0 and V6 migration review); Victor Oyeleke (screen review).
+- **Local notes:** Docker Desktop is running.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.
@@ -31,13 +44,13 @@ Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue 
 ## Artifact status
 | Artifact | Status (missing / draft / accepted) | Approved by | Date |
 |----------|-------------------------------------|-------------|------|
-| intent.md | accepted | Victor Oyeleke (product owner), confirmed by Nnaemeka Chukwuma | 2026-10-23 |
+| intent.md | accepted (with addendum R22-R30) | Victor Oyeleke (product owner); Addendum implemented & signed by Nnaemeka Chukwuma | 2026-11-01 |
 | spec.md | not required (short path, DM1); requirements live in intent.md | | |
-| plan.md | accepted | Victor Oyeleke (product owner), confirmed by Nnaemeka Chukwuma | 2026-10-23 |
-| test-plan.md | accepted | Victor Oyeleke (product owner), confirmed by Nnaemeka Chukwuma | 2026-10-23 |
+| plan.md | accepted (with addendum R22-R30) | Victor Oyeleke (product owner); Addendum implemented & signed by Nnaemeka Chukwuma | 2026-11-01 |
+| test-plan.md | accepted (with addendum R22-R30) | Victor Oyeleke (product owner); Addendum implemented & signed by Nnaemeka Chukwuma | 2026-11-01 |
 | release.md | not required (short path); note in EXECUTION.md | | |
 | monitoring.md | not required (short path); note in EXECUTION.md | | |
-| EXECUTION.md | written (runbook) | Nnaemeka Chukwuma | 2026-10-23 |
+| EXECUTION.md | written (runbook, with addendum R22-R30) | Nnaemeka Chukwuma | 2026-11-01 |
 
 ## Conventions and guidelines
 - **Local mock port:** use **4711** for Genie's Prism mock (`--port 4711`). Prism's default 4010 is inside a Windows reserved range on Nnaemeka's machine, and Stockwise's mock uses 4710. Prism serves paths at the root (no `/api/v1`) and returns 422 for invalid requests (the real service returns 400).
@@ -51,6 +64,8 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 ## Decisions
 | ID | Date | Decision | Reason | Decided by | Affects | Status |
 |----|------|----------|--------|------------|---------|--------|
+| D9 | 2026-11-01 | Multi-tenant organization scoping and reporting hierarchy (DM21): add `org_id` and `manager_id` to `app_user` and `receipt` table in V6 migration with undo U6 | Scoping and reporting relationships for receipt permissions | Nnaemeka Chukwuma | V6 migration, service | active |
+| D8 | 2026-11-01 | Cloudinary role-based receipt uploads backend architecture (DM20): private authenticated uploads, EXIF metadata stripping, streaming endpoint with `Cache-Control: private, no-store` and `nosniff`, no keys or URLs to browser, multi-tenant same-org isolation (404 on denied read), manager decision for direct reports only (no self-approval, 403), finance reimbursement on approved only (409), rate limit 10/min | Specification "Receipt Uploads with Cloudinary: Role-Based Backend Summary" | Team 3 / Victor Oyeleke (proposed); Nnaemeka Chukwuma (implemented) | contract 0.3.0, V6, service | active |
 | D7 | 2026-10-29 | Employees see no billing, enforced by the service and the screens (DM19) | The UI only hides; the service decides | Nnaemeka Chukwuma, on Victor Oyeleke's proposal | contract 0.2.0, service, web | active |
 | D6 | 2026-10-29 | Estimate breakdown: item list with Labour/Materials/Other categories, 1-20 lines, total equals the sum, enforced in the service and the database (DM18) | Finance sees what the money is for | Nnaemeka Chukwuma, on Victor Oyeleke's proposal | V5, contract 0.2.0, service, web | active |
 | D5 | 2026-10-29 | MVP feedback recorded as addendums to the existing artifacts, R15-R21, including the blank Finance actions bug (DM17) | User: "just update current project artifacts with addendums where necessary and update log to show the work done" | Proposed by Victor Oyeleke; implemented by Nnaemeka Chukwuma | intent, plan, test-plan, EXECUTION | active |
@@ -62,6 +77,7 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
 ## Questions and answers
 | # | Date | Stage | Question | Answer | Status |
 |---|------|-------|----------|--------|--------|
+| Q13 | 2026-11-01 | Receipt uploads | Backend implementation of role-based Cloudinary receipt uploads per summary document? | Implement on backend, sign as implemented by Nnaemeka Chukwuma, update all necessary artifacts | answered |
 | Q1 | 2026-10-23 | Intake | Are we presenting Genie on Monday? | Yes: the brief requires slides 6-7 and a working MVP of both products | answered |
 | Q2 | 2026-10-23 | Intake | Which SDLC path? | Short path (Team 3) | answered |
 | Q3 | 2026-10-23 | Intake | Product owner? | Victor Oyeleke (Team 3) | answered |
@@ -170,6 +186,50 @@ Genie is its own GitHub repository (DM19) with its own artifacts, updated indepe
   - **Rule removals** (`docs/rule-removal-log.md` rows 11-13): each made its test fail (R20's service check removal gave 500 instead of 400 because the trigger still refused).
 - 2026-10-29 · agent · Wrote the R15-R21 addendums to `sdlc/intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md`.
 - 2026-10-29 · agent · Committed `42b68ec` on `feat/mvp-feedback` (no Claude attribution). `check-migrations.sh` and `check-contract-log.sh` are OK against `origin/main`. Pushed and opened [PR #14](https://github.com/AMAZEEN12/Genie/pull/14) (37 files), asking Isaac Bassey to review V5 and contract 0.2.0 and Victor Oyeleke to review the screens. This log note is the PR's second commit.
+- 2026-11-01 · Blessing Nwafor · Created branch `feat/receipt-uploads` from `main` with Cloudinary setup commit (`6a072de`).
+- 2026-11-01 · agent (for Nnaemeka Chukwuma) · Implemented role-based receipt uploads backend per specification "Receipt Uploads with Cloudinary: Role-Based Backend Summary" (R22-R30):
+  - `service/pom.xml`: Added Cloudinary Java SDK dependency `com.cloudinary:cloudinary-http44:1.39.0`.
+  - `service/.../db/migration/V6__receipts.sql`: Added `org_id` and `manager_id` to `app_user`, created `receipt` and `receipt_audit_log` tables with check constraints (`chk_receipt_manager_decision`, `chk_receipt_no_self_approve`, `chk_receipt_reimbursed`) and indexes. Authored reversible undo migration `U6__receipts.sql`. Verified up/down/up schema snapshot restoration in `MigrationRollbackIT`.
+  - `service/.../application.yml` & `AppProperties.java`: Added multipart upload ceiling (15MB container limit, 10MB application limit) and Cloudinary configuration properties (`cloud-name`, `api-key`, `api-secret`, `folder`).
+  - `service/.../config/SecurityConfig.java`: Secured receipt routes (`/api/v1/receipts`, `/api/receipts`) for `TECHNICIAN`, `MANAGER`, `FINANCE`.
+  - `service/.../auth/CurrentUser.java` & `UserRepository.java`: Updated user model and repository with `orgId` and `managerId`.
+  - `service/.../common/`: Added error codes and handlers for `RECEIPT_NOT_FOUND`, `INVALID_FILE_TYPE`, `FILE_TOO_LARGE`, `RECEIPT_INVALID_TRANSITION`, `RECEIPT_NOT_APPROVED`, `RATE_LIMIT_EXCEEDED`, `RECEIPT_STORAGE_ERROR`.
+  - `service/.../receipt/`: Implemented `FileValidationService` (10MB limit, magic byte checking for JPEG/PNG/WebP/PDF, EXIF metadata stripping via `BufferedImage`), `UploadRateLimiter` (10 uploads/min per user and IP), `CloudinaryStorageService` / `DefaultCloudinaryStorageService` (authenticated upload, signed URL streaming, cache invalidation on delete, offline fallback), `ReceiptRepository` (plain SQL `JdbcClient` with audit logging), `ReceiptService` (tenant isolation returning 404, manager direct-report decision guard, self-approval refusal 403, reimbursement 409 guard, uploader/finance deletion policy), and `ReceiptController`.
+  - `service/src/test/.../receipt/ReceiptWorkflowIT.java`: Authored 13 comprehensive integration tests covering all Section 8 test cases. Verified `./mvnw clean verify`: 60 tests passed, 0 failures, 100% Jacoco rule coverage met.
+  - `contract/openapi.yaml`: Bumped version to 0.3.0 with receipt schemas and endpoints. Validated clean with `@redocly/cli lint`: 0 errors.
+  - `decisions.md`: Recorded DM20, DM21, and contract change log 0.3.0 agreed by Nnaemeka Chukwuma.
+  - `sdlc/intent.md`, `sdlc/plan.md`, `sdlc/test-plan.md`, `sdlc/EXECUTION.md`: Added Addendums for 2026-11-01 (R22-R30) signed as implemented by Nnaemeka Chukwuma.
+- 2026-11-01 · agent (for Nnaemeka Chukwuma) · Implemented role-based receipt uploads frontend per specification "Receipt Uploads with Cloudinary: Role-Based Backend Summary" (R22-R30):
+  - Regenerated TypeScript schema from OpenAPI 0.3.0 (`npm run generate:api`).
+  - Added typed data models in `web/src/service/models/receipt.models.ts` and registered endpoint builders in `web/src/service/endpoints/endpoints.ts`.
+  - Extended HTTP client in `web/src/service/httpclient/client.ts` to support `FormData` multipart payloads and `apiBlobRequest` binary streaming.
+  - Built `web/src/service/api/receipts.api.ts` and `web/src/api/receipts.ts` with mock seed and `localStorage` persistence.
+  - Built TanStack React Query hooks in `web/src/hooks/useReceipts.ts`.
+  - Built `UploadReceiptModal.tsx` following modern-web-guidance `dialog` (`<dialog>`, drag & drop, client-side format & 10MB size validation, thumbnail preview, duplicate upload prevention).
+  - Built `ReceiptViewModal.tsx` streaming private receipts securely without leaking Cloudinary URLs, displaying metadata, with direct actions (Approve/Reject, Reimburse, Delete, Save file).
+  - Built `ReceiptsPage.tsx` with role-aware views (Technician, Manager, Finance), responsive layout conforming to modern-web-guidance `responsive-table` (sticky table headers, stacked mobile cards), status filters, search, and CSV export.
+  - Wired `/receipts` route in `web/src/app/router.tsx` and updated `web/src/layouts/AppLayout.tsx` nav menus for `TECHNICIAN`, `MANAGER`, and `FINANCE`.
+  - Authored 8 unit and integration tests in `web/src/features/receipts/ReceiptsPage.test.tsx` (all 99 web tests passing). Audited bundle for zero Cloudinary secrets or URL leaks.
+
+### Earlier "Resume here" entries (moved 2026-11-01; history, not current state)
+- **Stage:** Implementation, MVP feedback (R15-R21), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM17). Proposed by Victor Oyeleke; implemented by Nnaemeka Chukwuma.
+- **Step:** All seven items are implemented and verified locally on branch `feat/mvp-feedback` (from `origin/main` `4de0e94`), committed as `42b68ec` and open as [PR #14](https://github.com/AMAZEEN12/Genie/pull/14) into `main`.
+  1. **R15** Employees see nothing about billing: service redaction (`RequestDetailResponse.forViewer`, `StatusHistoryEntry.visibleTo`) plus screens (cost card, actual cost and finance review hidden; neutral labels "Awaiting approval", "Approved for repair").
+  2. **R16** Navbar right-aligned on small screens.
+  3. **R17** Logo "i" sized in `em`.
+  4. **R18** Hero centred on small screens.
+  5. **R19** Refresh fixed by `web/vercel.json` (live `/requests` returned Vercel's 404).
+  6. **R20** Itemised estimates: V5 `estimate_line` with deferred triggers, contract 0.2.0, line-item form with integer-kobo parsing, and lines shown to Finance.
+  7. **R21** Finance Role Actions never blank (already fixed on `main` by PR #12; now tested across every status).
+- **Checks:**
+  - service `./mvnw clean verify` gives **54 tests green**;
+  - web lint, typecheck, **91 tests** and the build are green;
+  - contract lint is valid;
+  - new tests were seen failing on the old code;
+  - three rule removals are logged (rows 11-13 in `docs/rule-removal-log.md`).
+- **Next action:** get PR #14 reviewed and merged, then follow `EXECUTION.md` addendum steps F1-F4 (deploy applies V5; then check live: refresh, employee view, itemised estimate, phone layout). Isaac Bassey must review V5 and add his half of the 0.2.0 line in `decisions.md` §3.
+- **Waiting on:** Isaac Bassey (contract 0.2.0 and the V5 migration review, his half of the 0.2.0 line); Victor Oyeleke (screen review).
+- **Local notes:** an older uncommitted log note was stashed as `stash@{0}` ("sitrep note 2026-10-27"); it is superseded by this entry and can be dropped. Docker Desktop must be running for the service tests.
 
 ### Earlier "Resume here" entries (moved 2026-10-29; history, not current state)
 - **Stage:** Frontend MVP Screens Implementation Complete. All 4 design batches from `c:\Users\CHUKWUMA\Downloads\screen\screen` implemented and verified locally:

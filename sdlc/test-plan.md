@@ -87,3 +87,30 @@ Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by *
 - `npx @redocly/cli@2 lint contract/openapi.yaml --config contract/redocly.yaml`: valid.
 - **New tests seen failing on the old code:** the R16-R19 web tests (8 failed, `vercel.json` missing) and the R15 employee page test, run against `origin/main`'s files. R21's tests pass on `main` too: the blank box was in an older local branch and PR #12 had already fixed it; they now guard it.
 - **Rule removals** (see `docs/rule-removal-log.md` rows 11-13): R15 service redaction removed: `EmployeeBillingIT` fails; R20 service sum check removed: `EstimateBreakdownIT` fails (500 instead of 400, because the database trigger still refuses); R20 trigger condition removed: the direct-SQL test fails.
+
+## Addendum 2026-11-01: Receipt Uploads with Cloudinary (R22-R30)
+Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloudinary: Role-Based Backend Summary`; implemented, verified, and signed by **Nnaemeka Chukwuma** (Data and rules owner, implementer). Branch `feat/receipt-uploads`.
+
+### Traceability
+| Requirement | Test(s) | Type |
+|---|---|---|
+| R22 Private Upload & Metadata Stripping | `ReceiptWorkflowIT.test7_upload_renamed_exe_or_oversized_file_rejected_before_reaching_storage`, `ReceiptWorkflowIT.test8_phone_photo_metadata_stripped_on_upload_and_download` | integration (HTTP + Byte analysis) |
+| R23 Access-Controlled Streaming | `ReceiptWorkflowIT.test8_phone_photo_metadata_stripped_on_upload_and_download` (checks `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`) | integration (HTTP streaming) |
+| R24 Tenant & Role Isolation | `ReceiptWorkflowIT.test1_technician_requests_another_technicians_receipt_returns_404`, `ReceiptWorkflowIT.test2_manager_requests_receipt_from_outside_their_team_returns_404`, `ReceiptWorkflowIT.test3_finance_requests_receipt_from_another_organisation_returns_404` | integration (Multi-tenant HTTP) |
+| R25 Manager Decision Protection | `ReceiptWorkflowIT.test4_manager_approves_their_own_receipt_returns_403`, `ReceiptWorkflowIT.test5_technician_calls_decision_or_reimburse_route_returns_403`, `ReceiptWorkflowIT.test10_full_status_flow_submitted_to_approved_to_reimbursed` | integration (Role transitions) |
+| R26 Finance Reimbursement Guard | `ReceiptWorkflowIT.test6_finance_reimburses_receipt_that_is_not_approved_returns_409`, `ReceiptWorkflowIT.test10_full_status_flow_submitted_to_approved_to_reimbursed` | integration (Business guard) |
+| R27 Deletion Policy | `ReceiptWorkflowIT.test11_deletion_rules_for_uploader_and_finance` (uploader deletes submitted -> 204; uploader deletes approved -> 403; finance deletes -> 204) | integration (HTTP DELETE) |
+| R28 Upload Rate Limiting | `ReceiptWorkflowIT.test12_rate_limiting_enforced_per_user` (10 uploads pass, 11th triggers 429 `RATE_LIMIT_EXCEEDED`) | integration (Rate limiter) |
+| R29 Audit Trail Logging | `ReceiptWorkflowIT.test13_audit_trail_logging` (asserts `UPLOAD`, `VIEW`, `DECISION`, `REIMBURSE`, `DELETE` logged to `receipt_audit_log`) | integration (Database audit trail) |
+| R30 Leak Prevention | `ReceiptWorkflowIT.test9_inspect_responses_no_secret_no_api_key_no_cloudinary_url` | integration (Response payload audit) |
+| Migration Rollback (V6/U6) | `MigrationRollbackIT` (V6/U6 schema restoration up/down/up verified) | integration (Flyway / Postgres 17) |
+| Frontend Role Screens & Modals (R22-R30) | `ReceiptsPage.test.tsx` (8 tests: technician upload, validation, stream preview, manager decision & self-approval guard, finance reimburse & CSV export, deletion) | unit & integration (Vitest, React Testing Library) |
+
+### Results 2026-11-01 (Nnaemeka Chukwuma's machine, agent-run)
+- `cd service && ./mvnw clean verify`: **60 tests passed, 0 failures, BUILD SUCCESS** (Postgres 17 Testcontainers, JaCoCo coverage rules met).
+- `cd web && npm test`: **99 tests passed across 13 test files, 0 failures**.
+- `cd web && npm run lint`: **0 errors, 0 warnings (clean)**.
+- `cd web && npm run typecheck`: **0 errors (clean)**.
+- `cd web && npm run build`: **production build clean, zero bundle leaks**.
+- `cd genie && cmd.exe /c "npx @redocly/cli lint contract/openapi.yaml"`: **0 errors, contract valid**.
+- **Section 8 Scenarios:** All 9 testing points from the summary document verified passing in `ReceiptWorkflowIT`.

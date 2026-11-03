@@ -31,6 +31,16 @@ export const ENDPOINTS = {
     CREATE: (requestId: string) => `/requests/${requestId}/estimates`,
     DECISION: (estimateId: string) => `/estimates/${estimateId}/decision`,
   },
+
+  RECEIPTS: {
+    LIST: '/receipts',
+    UPLOAD: '/receipts',
+    DETAIL: (id: string) => `/receipts/${id}`,
+    FILE: (id: string) => `/receipts/${id}/file`,
+    DECISION: (id: string) => `/receipts/${id}/decision`,
+    REIMBURSE: (id: string) => `/receipts/${id}/reimburse`,
+    DELETE: (id: string) => `/receipts/${id}`,
+  },
 } as const;
 
 export type EndpointPaths = typeof ENDPOINTS;

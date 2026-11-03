@@ -5,3 +5,4 @@ export * from './estimate.models';
 export * from './transition.models';
 export * from './user.models';
 export * from './health.models';
+export * from './receipt.models';

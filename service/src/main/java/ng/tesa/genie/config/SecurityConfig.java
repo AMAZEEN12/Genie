@@ -51,6 +51,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/requests/*/estimates").hasRole("TECHNICIAN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/estimates/*/decision").hasRole("FINANCE")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/requests/*/override-review").hasRole("FINANCE")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/receipts/*/decision", "/api/receipts/*/decision").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/receipts/*/decision", "/api/receipts/*/decision").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/receipts/*/reimburse", "/api/receipts/*/reimburse").hasRole("FINANCE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/receipts/*/reimburse", "/api/receipts/*/reimburse").hasRole("FINANCE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/receipts", "/api/receipts").hasAnyRole("TECHNICIAN", "MANAGER", "FINANCE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/receipts/**", "/api/receipts/**").hasAnyRole("TECHNICIAN", "MANAGER", "FINANCE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/receipts/*", "/api/receipts/*").hasAnyRole("TECHNICIAN", "MANAGER", "FINANCE")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(currentUserConverter))

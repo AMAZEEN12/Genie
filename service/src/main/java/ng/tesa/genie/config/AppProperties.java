@@ -12,7 +12,8 @@ public record AppProperties(
         @DefaultValue("0.1.0-SNAPSHOT") String version,
         @DefaultValue("Africa/Lagos") String timezone,
         Security security,
-        Cors cors
+        Cors cors,
+        Cloudinary cloudinary
 ) {
     public record Security(
             String jwtSecret,
@@ -31,6 +32,19 @@ public record AppProperties(
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .toList();
+        }
+    }
+
+    public record Cloudinary(
+            @DefaultValue("") String cloudName,
+            @DefaultValue("") String apiKey,
+            @DefaultValue("") String apiSecret,
+            @DefaultValue("genie/receipts") String folder
+    ) {
+        public boolean isConfigured() {
+            return cloudName != null && !cloudName.isBlank()
+                    && apiKey != null && !apiKey.isBlank()
+                    && apiSecret != null && !apiSecret.isBlank();
         }
     }
 }

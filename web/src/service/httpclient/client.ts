@@ -86,7 +86,8 @@ export interface RequestOptions {
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'X-Request-Id': crypto.randomUUID() };
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (options.body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
 
   const token = options.token ?? getStoredToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -97,7 +98,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     response = await fetch(`${apiBaseUrl}${path}`, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : isFormData ? (options.body as FormData) : JSON.stringify(options.body),
       signal: options.signal,
     });
   } catch (cause) {
@@ -116,4 +117,38 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+/**
+ * Fetch binary stream from API (e.g. GET /receipts/{id}/file).
+ * Includes authentication bearer token and returns raw Blob.
+ */
+export async function apiBlobRequest(path: string, signal?: AbortSignal): Promise<Blob> {
+  const headers: Record<string, string> = { 'X-Request-Id': crypto.randomUUID() };
+  const token = getStoredToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method: 'GET',
+      headers,
+      signal,
+    });
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause;
+    throw new ApiError({ status: 0, title: 'Network error', detail: 'The service could not be reached.' });
+  }
+
+  if (!response.ok) {
+    let problem: Problem = { status: response.status, title: response.statusText };
+    try {
+      problem = { ...problem, ...((await response.json()) as Partial<Problem>), status: response.status };
+    } catch {
+      // Non-JSON response
+    }
+    throw new ApiError(problem);
+  }
+
+  return response.blob();
 }

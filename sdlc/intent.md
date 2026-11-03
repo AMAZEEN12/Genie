@@ -83,3 +83,20 @@ Proposed by **Victor Oyeleke** (product owner) as MVP feedback; implemented by *
 | R21 | **Finance's Role Actions box is never blank** (reported by Nnaemeka Chukwuma while testing locally). | For every status, with or without an override, Finance sees an action or "No finance action pending". |
 
 **Out of scope:** editing an estimate after submission; letting employees see costs on request; changing the seed's existing estimates (they have no lines and stay valid).
+
+## Addendum 2026-11-01: Receipt Uploads with Cloudinary (R22-R30)
+Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloudinary: Role-Based Backend Summary`; implemented and signed by **Nnaemeka Chukwuma** (Data and rules owner, implementer). Added 2026-11-01 as an addendum to the accepted artifacts (DM20-DM21).
+
+| ID | Requirement | Acceptance criteria |
+|----|----|----|
+| R22 | **Private Cloudinary Receipt Uploads** (Technician, Manager, Finance). | Multipart upload via `/api/v1/receipts` capped at 10MB. Enforces magic byte checks (accepts JPEG, PNG, WebP, PDF only; renames like `.exe` return 400). Re-encodes images on upload to strip location and device metadata. Uploads to Cloudinary as `type: authenticated`, `resource_type: auto` into a server-controlled folder (`genie/receipts/<orgId>`). Returns application receipt ID only; Cloudinary public ID and upload URL never reach browser. |
+| R23 | **Access-Controlled Streaming** via `/api/v1/receipts/{id}/file`. | After role and tenant access checks, backend generates a signed Cloudinary URL and streams the file back through the service. Sets `Cache-Control: private, no-store` and `X-Content-Type-Options: nosniff`. Browser never sees a Cloudinary URL. |
+| R24 | **Tenant and Role Isolation**. | Single access check on every receipt route: same organisation first, then role and relationship. Denied requests return 404 instead of 403 (Technician viewing another technician's receipt returns 404; Manager viewing receipt outside team returns 404; Finance viewing receipt from another organisation returns 404). |
+| R25 | **Manager Decision Protection**. | Manager approves or rejects direct reports' receipts only (`PUT/POST /receipts/{id}/decision`). Self-approval is rejected with 403. Non-managers calling decision get 403. Transitions `submitted` -> `approved` or `rejected`. Invalid transitions return 409. |
+| R26 | **Finance Reimbursement Guard**. | Finance marks approved receipts as reimbursed (`PUT/POST /receipts/{id}/reimburse`). Reimbursing a receipt that is not approved returns 409. Non-finance calling reimburse returns 403. |
+| R27 | **Deletion Policy**. | Uploader can delete own receipt while still `submitted` (`DELETE /receipts/{id}`). Uploader deleting an approved receipt gets 403. Finance can delete any receipt in the organisation at any time. File is deleted from Cloudinary (invalidating cache) and removed from database. |
+| R28 | **Upload Rate Limiting**. | Uploads are rate limited per user and per IP (10 uploads/minute). Exceeding rate limit returns 429 Too Many Requests (`RATE_LIMIT_EXCEEDED`). |
+| R29 | **Audit Trail Logging**. | State transitions and data access (`UPLOAD`, `VIEW`, `DECISION`, `REIMBURSE`, `DELETE`) are logged to `receipt_audit_log` with timestamp, user ID, org ID, and action details. |
+| R30 | **Information Leak Prevention**. | API responses and RFC 9457 Problem error bodies never return Cloudinary errors, stack traces, cloud name, API key, API secret, or Cloudinary URLs. |
+
+**Out of scope for backend receipt phase:** Video uploads, client-side direct uploads to Cloudinary (forbidden by design), batch exports.
