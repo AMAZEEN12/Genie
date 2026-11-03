@@ -100,3 +100,12 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 | R30 | **Information Leak Prevention**. | API responses and RFC 9457 Problem error bodies never return Cloudinary errors, stack traces, cloud name, API key, API secret, or Cloudinary URLs. |
 
 **Out of scope for backend receipt phase:** Video uploads, client-side direct uploads to Cloudinary (forbidden by design), batch exports.
+
+## Addendum 2026-11-03: Receipt Rendering Resilience & Defensive Format Derivation (R31-R33)
+Reported via production incident on `genie-sigma-two.vercel.app/receipts` (`TypeError: Cannot read properties of undefined (reading 'toLowerCase')` at `Array.map`); implemented and verified by **Nnaemeka Chukwuma**.
+
+| ID | Requirement | Acceptance criteria |
+|----|----|----|
+| R31 | **Defensive Format Derivation (Frontend)**. | Receipt rendering must never assume `receipt.format` is present or non-null. The UI must safely derive format and PDF status using `receipt.format || receipt.originalName?.split('.').pop() || 'file'`, with optional chaining across all string methods (`toLowerCase()`, `slice()`). Searching by name, ID, or uploader must never throw on missing fields. |
+| R32 | **Explicit Backend Format & ResourceType Exposure**. | `ReceiptResponse` in `ng.tesa.genie.receipt` and the OpenAPI `Receipt` schema must expose `format` and `resourceType` explicitly from `Receipt.java`, ensuring consumers receive authoritative file metadata. |
+| R33 | **Route Error Boundary**. | The `/receipts` route (and root `AppLayout`) must configure an `ErrorBoundary` (`ErrorPage.tsx`) so that any unexpected runtime error displays a branded, accessible recovery state ("Reload page" / "Back to home") rather than an unstyled runtime crash screen. |

@@ -1355,6 +1355,12 @@ components:
         originalName:
           type: string
           example: hvac_filter_invoice.pdf
+        format:
+          type: string
+          example: pdf
+        resourceType:
+          type: string
+          example: raw
         bytes:
           type: integer
           example: 1048576

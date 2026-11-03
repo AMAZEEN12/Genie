@@ -12,6 +12,22 @@ import { formatBytes } from './formatBytes';
 import { UploadReceiptModal } from './modals/UploadReceiptModal';
 import { ReceiptViewModal } from './modals/ReceiptViewModal';
 
+function getReceiptFormat(receipt: Partial<ReceiptModel>): string {
+  if (receipt.format) return receipt.format.toLowerCase();
+  if (receipt.originalName) {
+    const ext = receipt.originalName.split('.').pop();
+    if (ext && ext !== receipt.originalName) {
+      return ext.toLowerCase();
+    }
+  }
+  return 'file';
+}
+
+function isReceiptPdf(receipt: Partial<ReceiptModel>): boolean {
+  const fmt = getReceiptFormat(receipt);
+  return fmt === 'pdf' || Boolean(receipt.originalName?.toLowerCase().endsWith('.pdf'));
+}
+
 export function ReceiptsPage(): React.JSX.Element {
   const { user } = useAuth();
   const role = user?.role || 'TECHNICIAN';
@@ -48,9 +64,9 @@ export function ReceiptsPage(): React.JSX.Element {
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = receipt.originalName.toLowerCase().includes(q);
-        const matchesId = receipt.id.toLowerCase().includes(q);
-        const matchesUploader = receipt.uploadedBy.toLowerCase().includes(q);
+        const matchesName = receipt.originalName ? receipt.originalName.toLowerCase().includes(q) : false;
+        const matchesId = receipt.id ? receipt.id.toLowerCase().includes(q) : false;
+        const matchesUploader = receipt.uploadedBy ? receipt.uploadedBy.toLowerCase().includes(q) : false;
         if (!matchesName && !matchesId && !matchesUploader) {
           return false;
         }
@@ -342,7 +358,8 @@ export function ReceiptsPage(): React.JSX.Element {
               </thead>
               <tbody className="divide-y divide-white/5 text-white">
                 {filteredReceipts.map((receipt) => {
-                  const isPdf = receipt.format.toLowerCase() === 'pdf';
+                  const fileFormat = getReceiptFormat(receipt);
+                  const isPdf = isReceiptPdf(receipt);
                   const isOwn = Boolean(user?.id && receipt.uploadedBy === user.id);
                   const canManagerApprove =
                     role === 'MANAGER' && receipt.status === 'submitted' && !isOwn;
@@ -361,7 +378,7 @@ export function ReceiptsPage(): React.JSX.Element {
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-[6px] bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-[#E1EE04] font-mono font-bold text-[10px] uppercase">
-                            {isPdf ? 'PDF' : receipt.format}
+                            {isPdf ? 'PDF' : fileFormat.toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <span className="font-medium text-white truncate block max-w-xs sm:max-w-sm">
@@ -469,7 +486,8 @@ export function ReceiptsPage(): React.JSX.Element {
           {/* Mobile Stacked Card View */}
           <div className="sm:hidden divide-y divide-white/10">
             {filteredReceipts.map((receipt) => {
-              const isPdf = receipt.format.toLowerCase() === 'pdf';
+              const fileFormat = getReceiptFormat(receipt);
+              const isPdf = isReceiptPdf(receipt);
               const isOwn = Boolean(user?.id && receipt.uploadedBy === user.id);
               const canManagerApprove =
                 role === 'MANAGER' && receipt.status === 'submitted' && !isOwn;
@@ -487,7 +505,7 @@ export function ReceiptsPage(): React.JSX.Element {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-[6px] bg-white/10 flex items-center justify-center shrink-0 text-[#E1EE04] font-mono text-xs font-bold uppercase">
-                        {isPdf ? 'PDF' : receipt.format}
+                        {isPdf ? 'PDF' : fileFormat.toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <span className="font-semibold text-white text-sm truncate block">

@@ -131,15 +131,26 @@ function getAllMockReceipts(): ReceiptModel[] {
   return [...local, ...remainingSeed];
 }
 
+export function normalizeReceipt(r: ReceiptModel): ReceiptModel {
+  const ext = r.originalName ? r.originalName.split('.').pop()?.toLowerCase() || 'file' : 'file';
+  const isPdf = ext === 'pdf';
+  return {
+    ...r,
+    format: r.format || ext,
+    resourceType: r.resourceType || (isPdf ? 'raw' : 'image'),
+  };
+}
+
 /**
  * List receipts filtered for current user role and permissions.
  */
 export async function getReceiptsList(): Promise<ReceiptModel[]> {
   try {
-    return await receiptsApi.listReceipts();
+    const list = await receiptsApi.listReceipts();
+    return list.map(normalizeReceipt);
   } catch {
     const user = getStoredUser();
-    const all = getAllMockReceipts();
+    const all = getAllMockReceipts().map(normalizeReceipt);
 
     if (!user) return all;
 
@@ -164,7 +175,8 @@ export async function getReceiptsList(): Promise<ReceiptModel[]> {
 
 export async function uploadReceiptFile(file: File): Promise<ReceiptModel> {
   try {
-    return await receiptsApi.uploadReceipt(file);
+    const uploaded = await receiptsApi.uploadReceipt(file);
+    return normalizeReceipt(uploaded);
   } catch {
     const user = getStoredUser();
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -194,7 +206,8 @@ export async function uploadReceiptFile(file: File): Promise<ReceiptModel> {
 
 export async function decideReceiptAction(id: string, decision: 'approved' | 'rejected'): Promise<ReceiptModel> {
   try {
-    return await receiptsApi.decideReceipt(id, decision);
+    const decided = await receiptsApi.decideReceipt(id, decision);
+    return normalizeReceipt(decided);
   } catch {
     const user = getStoredUser();
     const all = getAllMockReceipts();
@@ -222,7 +235,8 @@ export async function decideReceiptAction(id: string, decision: 'approved' | 're
 
 export async function reimburseReceiptAction(id: string): Promise<ReceiptModel> {
   try {
-    return await receiptsApi.reimburseReceipt(id);
+    const reimbursed = await receiptsApi.reimburseReceipt(id);
+    return normalizeReceipt(reimbursed);
   } catch {
     const user = getStoredUser();
     const all = getAllMockReceipts();

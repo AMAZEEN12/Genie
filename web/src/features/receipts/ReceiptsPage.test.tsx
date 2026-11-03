@@ -250,4 +250,27 @@ describe('ReceiptsPage', () => {
       expect(screen.queryByText('ac_compressor_coolant_r410a.jpg')).not.toBeInTheDocument();
     });
   });
+
+  it('renders receipts safely without crashing even if format or resourceType is undefined (R31 bugfix)', async () => {
+    const rawBackendReceipt = {
+      id: 'a1000000-0000-0000-0000-999999999999',
+      orgId: '00000000-0000-0000-0000-000000000001',
+      uploadedBy: TECH_USER.id,
+      managerId: 'b2c9d1e4-5f6a-4b8c-9d0e-1f2a3b4c5d6e',
+      status: 'submitted' as const,
+      originalName: 'valve_fitting_receipt.png',
+      bytes: 123450,
+      createdAt: '2026-11-03T11:00:00Z',
+    };
+    localStorage.setItem('genie_local_receipts', JSON.stringify([rawBackendReceipt]));
+
+    renderReceiptsPage(TECH_USER);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('valve_fitting_receipt.png').length).toBeGreaterThan(0);
+    });
+
+    // Verify it safely derived PNG badge from filename without throwing TypeError
+    expect(screen.getAllByText('PNG').length).toBeGreaterThan(0);
+  });
 });
