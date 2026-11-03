@@ -28,11 +28,13 @@ jobs:
       - name: Wake the API (Render free tier sleeps)
         run: |
           for i in $(seq 1 18); do curl -fsS "${{ inputs.api_url }}/health" && break; sleep 5; done
+      - name: Install Lighthouse CI and puppeteer (not saved to package.json)
+        run: npm install --no-save @lhci/cli@0.14.0 puppeteer@23.11.1
       - name: Lighthouse CI
         env:
           WEB_URL: ${{ inputs.web_url }}
           API_URL: ${{ inputs.api_url }}
-        run: npx --yes @lhci/cli@0.14.0 autorun --config=lighthouse/lighthouserc.cjs
+        run: npx lhci autorun --config=lighthouse/lighthouserc.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
