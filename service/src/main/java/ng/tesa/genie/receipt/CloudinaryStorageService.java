@@ -12,6 +12,8 @@ public interface CloudinaryStorageService {
     ) {
     }
 
+    boolean isConfigured();
+
     UploadResult upload(byte[] fileBytes, String folder, String detectedFormat, String resourceType);
 
     InputStream downloadStream(String publicId, String resourceType, String format);

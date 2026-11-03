@@ -175,6 +175,31 @@ public class ReceiptRepository {
         return deleted > 0;
     }
 
+    public void saveFileBytes(UUID receiptId, byte[] bytes, String contentType) {
+        jdbc.sql("""
+                INSERT INTO receipt_file (receipt_id, file_bytes, content_type)
+                VALUES (:receiptId, :bytes, :contentType)
+                ON CONFLICT (receipt_id) DO UPDATE
+                SET file_bytes = EXCLUDED.file_bytes,
+                    content_type = EXCLUDED.content_type
+                """)
+                .param("receiptId", receiptId)
+                .param("bytes", bytes)
+                .param("contentType", contentType)
+                .update();
+    }
+
+    public Optional<byte[]> findFileBytes(UUID receiptId) {
+        return jdbc.sql("""
+                SELECT file_bytes
+                FROM receipt_file
+                WHERE receipt_id = :receiptId
+                """)
+                .param("receiptId", receiptId)
+                .query((rs, rowNum) -> rs.getBytes("file_bytes"))
+                .optional();
+    }
+
     public void logAudit(UUID receiptId, UUID orgId, UUID userId, String action, String details) {
         jdbc.sql("""
                 INSERT INTO receipt_audit_log (receipt_id, org_id, user_id, action, details)

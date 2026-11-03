@@ -36,12 +36,20 @@ public record AppProperties(
     }
 
     public record Cloudinary(
+            @DefaultValue("") String url,
             @DefaultValue("") String cloudName,
             @DefaultValue("") String apiKey,
             @DefaultValue("") String apiSecret,
             @DefaultValue("genie/receipts") String folder
     ) {
         public boolean isConfigured() {
+            if (url != null && !url.isBlank()) {
+                return true;
+            }
+            String envUrl = System.getenv("CLOUDINARY_URL");
+            if (envUrl != null && !envUrl.isBlank()) {
+                return true;
+            }
             return cloudName != null && !cloudName.isBlank()
                     && apiKey != null && !apiKey.isBlank()
                     && apiSecret != null && !apiSecret.isBlank();

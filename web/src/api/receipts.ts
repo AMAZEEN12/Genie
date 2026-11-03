@@ -272,22 +272,31 @@ export async function deleteReceiptAction(id: string): Promise<void> {
 export async function downloadReceiptBlob(id: string): Promise<Blob> {
   try {
     return await receiptsApi.fetchReceiptBlob(id);
-  } catch {
-    // Generate an illustrative placeholder SVG blob for offline preview
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
-        <rect width="600" height="800" fill="#1A1A1A"/>
-        <rect x="40" y="40" width="520" height="720" rx="16" fill="#111111" stroke="#333333" stroke-width="2"/>
-        <text x="300" y="120" font-family="sans-serif" font-size="28" font-weight="bold" fill="#E1EE04" text-anchor="middle">GENIE RECEIPT PREVIEW</text>
-        <line x1="80" y1="160" x2="520" y2="160" stroke="#444444" stroke-width="1"/>
-        <text x="80" y="210" font-family="monospace" font-size="16" fill="#A8A8A8">Receipt ID: ${id}</text>
-        <text x="80" y="250" font-family="sans-serif" font-size="16" fill="#FFFFFF">Private Authenticated Stream</text>
-        <rect x="80" y="290" width="440" height="320" rx="10" fill="#222222" stroke="#444444"/>
-        <text x="300" y="460" font-family="sans-serif" font-size="20" fill="#888888" text-anchor="middle">Receipt Content Streamed Securely</text>
-        <text x="300" y="490" font-family="sans-serif" font-size="14" fill="#666666" text-anchor="middle">Cache-Control: private, no-store</text>
-        <text x="300" y="700" font-family="sans-serif" font-size="14" fill="#555555" text-anchor="middle">Genie Maintenance & Facility Operations</text>
-      </svg>
-    `;
-    return new Blob([svg], { type: 'image/svg+xml' });
+  } catch (err) {
+    // In mock mode or offline demo seed data without live backend
+    const isMockSeed = id.startsWith('a1000000-');
+    const isOffline = err instanceof Error && (err.message.includes('Network error') || (err as { problem?: { status?: number } }).problem?.status === 0);
+
+    if (isMockSeed || isOffline) {
+      // Valid SVG XML placeholder for offline mock preview
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+          <rect width="600" height="800" fill="#1A1A1A"/>
+          <rect x="40" y="40" width="520" height="720" rx="16" fill="#111111" stroke="#333333" stroke-width="2"/>
+          <text x="300" y="120" font-family="sans-serif" font-size="28" font-weight="bold" fill="#E1EE04" text-anchor="middle">GENIE RECEIPT PREVIEW</text>
+          <line x1="80" y1="160" x2="520" y2="160" stroke="#444444" stroke-width="1"/>
+          <text x="80" y="210" font-family="monospace" font-size="16" fill="#A8A8A8">Receipt ID: ${id.slice(0, 18)}...</text>
+          <text x="80" y="250" font-family="sans-serif" font-size="16" fill="#FFFFFF">Private Authenticated Stream</text>
+          <rect x="80" y="290" width="440" height="320" rx="10" fill="#222222" stroke="#444444"/>
+          <text x="300" y="460" font-family="sans-serif" font-size="20" fill="#888888" text-anchor="middle">Receipt Content Streamed Securely</text>
+          <text x="300" y="490" font-family="sans-serif" font-size="14" fill="#666666" text-anchor="middle">Cache-Control: private, no-store</text>
+          <text x="300" y="700" font-family="sans-serif" font-size="14" fill="#555555" text-anchor="middle">Genie Maintenance &amp; Facility Operations</text>
+        </svg>
+      `;
+      return new Blob([svg], { type: 'image/svg+xml' });
+    }
+
+    // Propagate backend error for real receipts so UI surfaces accurate problem details
+    throw err;
   }
 }

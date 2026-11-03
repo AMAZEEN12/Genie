@@ -1,10 +1,13 @@
 package ng.tesa.genie.receipt;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +22,8 @@ import ng.tesa.genie.config.AppProperties;
 
 @Service
 public class ReceiptService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReceiptService.class);
 
     private final ReceiptRepository repository;
     private final FileValidationService fileValidationService;
@@ -85,6 +90,8 @@ public class ReceiptService {
         );
 
         Receipt saved = repository.insert(receipt);
+        // Persist file bytes in database fallback store (R34) so restarts never lose files
+        repository.saveFileBytes(saved.id(), validated.bytes(), validated.resourceType());
         repository.logAudit(saved.id(), saved.orgId(), user.id(), "UPLOAD", "Receipt uploaded: " + saved.originalName());
 
         // Return only our own receipt ID, never Cloudinary public_id or URL
@@ -148,7 +155,36 @@ public class ReceiptService {
 
     public ReceiptStreamResult getReceiptFile(CurrentUser user, UUID receiptId) {
         Receipt r = checkViewAccess(user, receiptId);
-        InputStream stream = storageService.downloadStream(r.publicId(), r.resourceType(), r.format());
+
+        InputStream stream = null;
+        if (storageService.isConfigured()) {
+            try {
+                stream = storageService.downloadStream(r.publicId(), r.resourceType(), r.format());
+            } catch (Exception e) {
+                log.warn("Cloudinary stream failed for receipt {}, checking database fallback: {}", r.id(), e.getMessage());
+            }
+        }
+
+        // Database persistent fallback (persists across container restarts and sleep cycles)
+        if (stream == null) {
+            byte[] dbBytes = repository.findFileBytes(r.id()).orElse(null);
+            if (dbBytes != null) {
+                stream = new ByteArrayInputStream(dbBytes);
+            }
+        }
+
+        // In-memory fallback (for offline test runs or unconfigured environments)
+        if (stream == null && !storageService.isConfigured()) {
+            try {
+                stream = storageService.downloadStream(r.publicId(), r.resourceType(), r.format());
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (stream == null) {
+            throw new NotFoundException("Stored receipt file not found.");
+        }
+
         repository.logAudit(r.id(), r.orgId(), user.id(), "VIEW", "Receipt file viewed: " + r.originalName());
 
         String contentType = switch (r.format().toLowerCase()) {

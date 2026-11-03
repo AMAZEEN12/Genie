@@ -36,7 +36,15 @@ public class DefaultCloudinaryStorageService implements CloudinaryStorageService
 
     public DefaultCloudinaryStorageService(AppProperties properties) {
         AppProperties.Cloudinary cProps = properties.cloudinary();
-        if (cProps != null && cProps.isConfigured()) {
+        String envUrl = System.getenv("CLOUDINARY_URL");
+        String configUrl = (cProps != null && cProps.url() != null && !cProps.url().isBlank())
+                ? cProps.url()
+                : envUrl;
+
+        if (configUrl != null && !configUrl.isBlank()) {
+            this.cloudinary = new Cloudinary(configUrl);
+            this.isConfigured = true;
+        } else if (cProps != null && cProps.isConfigured()) {
             Map<String, Object> config = new HashMap<>();
             config.put("cloud_name", cProps.cloudName());
             config.put("api_key", cProps.apiKey());
@@ -51,6 +59,11 @@ public class DefaultCloudinaryStorageService implements CloudinaryStorageService
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
+    }
+
+    @Override
+    public boolean isConfigured() {
+        return isConfigured;
     }
 
     @Override

@@ -204,14 +204,31 @@ function ReceiptViewModalContent({
                 <span className="text-[11px] text-white/40">Cache-Control: private, no-store</span>
               </div>
             ) : streamError ? (
-              <div className="p-4 text-center space-y-2">
+              <div className="p-6 text-center space-y-3 max-w-md">
                 <div className="w-12 h-12 rounded-full bg-[#FF6B5E]/10 border border-[#FF6B5E]/20 text-[#FF6B5E] flex items-center justify-center mx-auto text-xl font-bold">
                   !
                 </div>
-                <p className="text-sm text-[#FF6B5E]">{streamError}</p>
-                <p className="text-xs text-[#A8A8A8]">
-                  Receipt could not be loaded. Please ensure you are authorized to view this receipt.
+                <h4 className="text-sm font-semibold text-white">Receipt File Not Found</h4>
+                <p className="text-xs text-[#A8A8A8] leading-relaxed">
+                  {streamError.toLowerCase().includes('stored receipt file not found') || streamError.toLowerCase().includes('not found')
+                    ? 'The file binary for this receipt was cleared during a server container restart before persistent storage was enabled.'
+                    : streamError}
                 </p>
+                <p className="text-xs text-[#A8A8A8]">
+                  Please delete this receipt record and re-upload to store it with persistent database backup.
+                </p>
+                {canDelete && (
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending}
+                      className="px-3.5 py-1.5 rounded-[8px] bg-[#FF6B5E]/20 border border-[#FF6B5E]/40 text-[#FF6B5E] text-xs font-semibold hover:bg-[#FF6B5E]/30 transition-colors cursor-pointer"
+                    >
+                      {deleteMutation.isPending ? 'Deleting...' : 'Delete & Re-upload'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : blobUrl ? (
               isPdf ? (
@@ -241,6 +258,9 @@ function ReceiptViewModalContent({
                 <img
                   src={blobUrl}
                   alt={receipt.originalName}
+                  onError={() => {
+                    setStreamError('The file preview could not be rendered as an image.');
+                  }}
                   className="max-h-[460px] w-auto object-contain rounded-[8px]"
                 />
               )
@@ -302,7 +322,7 @@ function ReceiptViewModalContent({
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/10 shrink-0">
           <div className="flex items-center gap-2">
-            {blobUrl && (
+            {blobUrl && !streamError && (
               <a
                 href={blobUrl}
                 download={receipt.originalName}
