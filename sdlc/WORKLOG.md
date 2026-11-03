@@ -6,22 +6,24 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Fix Verification Complete, Receipt Rendering Resilience (R31-R33). Diagnosed and resolved production error on `https://genie-sigma-two.vercel.app/receipts` (`TypeError: Cannot read properties of undefined (reading 'toLowerCase')`).
-- **Step:** Implemented and verified across frontend and backend on branch `fix/receipt-format-undefined` (from `origin/main` `e2837d2`):
-  1. `ReceiptsPage.tsx`: Safely derive `format` and `isPdf` from `receipt.format || receipt.originalName?.split('.').pop() || 'file'`; guard search filters with optional chaining.
-  2. `ReceiptViewModal.tsx`: Safely derive format without throwing on undefined.
-  3. `router.tsx`: Registered `ErrorPage.tsx` as `ErrorBoundary` on the root route.
-  4. `ReceiptResponse.java` & `openapi.yaml`: Exposed `format` and `resourceType` from `Receipt.java`.
-  5. `ReceiptsPage.test.tsx`: Added regression test proving receipts without `format` render safely without throwing.
+- **Stage:** Fix Verification Complete, Persistent Receipt Fallback Storage & Preview Resilience (R34-R38). Diagnosed and resolved production issue where receipts uploaded on ephemeral containers (Render) could not be viewed or downloaded after container restarts.
+- **Step:** Implemented and verified across backend and frontend on branch `fix/receipt-view-download-persistence`:
+  1. `V7__receipt_storage_fallback.sql` & `U7__receipt_storage_fallback.sql`: Added dedicated `receipt_file` table storing raw binary bytes persistently in PostgreSQL with cascade deletion.
+  2. `ReceiptRepository.java`: Added `saveFileBytes` and `findFileBytes`.
+  3. `ReceiptService.java`: Dual-storage on upload (writes file to Cloudinary if configured and backs up to `receipt_file`); streams from Cloudinary or database fallback if Cloudinary is unavailable or unconfigured.
+  4. `AppProperties.java` & `DefaultCloudinaryStorageService.java`: Support standard `CLOUDINARY_URL` format.
+  5. `web/src/api/receipts.ts`: Error transparency in `downloadReceiptBlob` (no silent swallowing of 404 into dummy SVGs for real receipts; valid XML `&amp;` for mock previews).
+  6. `ReceiptViewModal.tsx`: Added `onError` fallback on `<img ... />` to switch gracefully to error recovery state; informative explanation for files lost prior to persistent storage with inline "Delete & Re-upload" button; guarded "Save File" download button against stream errors.
 - **Checks:**
+  - Migrations guard: `check-migrations.sh origin/main` gives **`migrations: OK`**;
+  - Test guard: `check-test-guard.sh origin/main fix/receipt-view-download-persistence` gives **`test-guard: OK`**;
+  - Contract guard: `check-contract-log.sh origin/main` gives **`contract-log: OK`**;
   - Web `npm test` gives **100 tests passed across 13 test files (0 failures)**;
   - Web `npm run lint` is clean (0 errors, 0 warnings);
   - Web `npm run typecheck` is clean (0 errors);
-  - Web `npm run build` succeeds (`dist/` generated in 5.46s);
   - Service `mvnw test-compile` passes (`BUILD SUCCESS`);
-  - Service `mvnw test -Dtest=*Test` passes (7/7 tests passed, `BUILD SUCCESS`);
-  - Contract lint `npx @redocly/cli lint contract/openapi.yaml` passes (valid).
-- **Next action:** Commit changes on `fix/receipt-format-undefined`, push to origin, and open PR.
+  - Service `mvnw test -Dtest=*Test` passes (7/7 tests passed, `BUILD SUCCESS`).
+- **Next action:** Commit changes on `fix/receipt-view-download-persistence`, push to origin, and open PR.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.

@@ -232,3 +232,28 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 
 ### Proof
 All 13 integration test scenarios in `ReceiptWorkflowIT` pass cleanly against Testcontainers PostgreSQL 17, and `MigrationRollbackIT` passes up/down/up schema restoration (60 tests passed). Web frontend test suite passes 99/99 tests across 13 test files (`npm test`), TypeScript compiles cleanly (`tsc --noEmit`), ESLint passes with 0 warnings (`eslint . --max-warnings 0`), and production build succeeds (`npm run build`) with zero leaks of Cloudinary credentials or URLs.
+
+## Addendum 2026-11-03: Receipt Storage Persistence & Preview Resilience (R34-R38)
+Proposed following production incident where container restarts wiped in-memory fallback receipt binaries; designed and implemented by **Nnaemeka Chukwuma**.
+
+### Files that change
+| File | Status | Requirements |
+|---|---|---|
+| `service/src/main/resources/db/migration/V7__receipt_storage_fallback.sql` | new | R34 |
+| `service/src/main/resources/db/rollback/U7__receipt_storage_fallback.sql` | new | R34 |
+| `service/.../config/AppProperties.java` (`CLOUDINARY_URL` support) | modified | R35 |
+| `service/src/main/resources/application.yml` (`url: ${CLOUDINARY_URL:}`) | modified | R35 |
+| `service/.../receipt/CloudinaryStorageService.java` (`isConfigured()`) | modified | R34, R35 |
+| `service/.../receipt/DefaultCloudinaryStorageService.java` (URL constructor, `isConfigured()`) | modified | R34, R35 |
+| `service/.../receipt/ReceiptRepository.java` (`saveFileBytes`, `findFileBytes`) | modified | R34 |
+| `service/.../receipt/ReceiptService.java` (DB fallback persistence & streaming) | modified | R34 |
+| `web/src/api/receipts.ts` (error propagation, valid XML SVG) | modified | R36, R37 |
+| `web/src/features/receipts/modals/ReceiptViewModal.tsx` (`onError`, recovery UI, save guard) | modified | R37, R38 |
+
+### Risks & Mitigations
+| Risk | What it could break | Mitigation |
+|---|---|---|
+| Large file binaries bloat PostgreSQL | Slow queries or storage limit | File binaries stored in dedicated `receipt_file` table (not main `receipt`), with 10MB file size cap enforced on upload. |
+| Ephemeral containers wipe stored files | Receipts view/download returns 404 | Dual storage: files written to Cloudinary if configured and persistently backed by PostgreSQL `receipt_file`. |
+| Broken image blobs stall preview | Broken icon displayed to user | `img.onError` handler catches rendering errors and switches to clean error recovery card. |
+

@@ -114,3 +114,16 @@ Proposed by **Victor Oyeleke** and the specification `Receipt Uploads with Cloud
 - `cd web && npm run build`: **production build clean, zero bundle leaks**.
 - `cd genie && cmd.exe /c "npx @redocly/cli lint contract/openapi.yaml"`: **0 errors, contract valid**.
 - **Section 8 Scenarios:** All 9 testing points from the summary document verified passing in `ReceiptWorkflowIT`.
+
+## Addendum 2026-11-03: Receipt Storage Persistence & Preview Resilience (R34-R38)
+Proposed following production incident where container restarts wiped in-memory fallback receipt binaries; designed and implemented by **Nnaemeka Chukwuma**.
+
+### Traceability
+| Requirement | Test(s) | Type |
+|---|---|---|
+| R34 Persistent Database Storage Fallback | `MigrationRollbackIT` (V7/U7 up/down/up verified), `ReceiptWorkflowIT` (file streaming via DB fallback) | integration (Flyway / PostgreSQL) |
+| R35 Flexible Cloudinary Config | Backend compilation & configuration verification | unit / integration |
+| R36 Error Transparency | `ReceiptsPage.test.tsx` (propagates API error to error boundary / view alert) | unit / integration |
+| R37 Resilient Viewer & Error Handling | `ReceiptsPage.test.tsx` (broken image detection via `onError`, valid SVG XML in mock) | unit (React Testing Library) |
+| R38 Orphaned Receipt Cleanup | `ReceiptsPage.test.tsx` (inline delete and re-upload trigger on missing binary) | unit & integration |
+
