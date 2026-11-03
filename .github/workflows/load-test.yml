@@ -1,0 +1,59 @@
+# Manual. k6 mixed read/write load against a deployed Genie API. Writes create fictional faults in that database.
+# Threshold misses do not fail the job: finding the saturation point is the goal. Read the summary.
+name: Load test
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "API address including /api/v1"
+        required: true
+        default: "https://genie-t2s5.onrender.com/api/v1"
+      rates:
+        description: "Reads per second, one step each (comma separated)"
+        default: "2,5,10,20"
+      write_ratio:
+        description: "Writes as a share of reads (0.1 = 10%)"
+        default: "0.1"
+      target_p95:
+        description: "p95 target in ms"
+        default: "800"
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Wake the API (Render free tier sleeps)
+        run: |
+          for i in $(seq 1 18); do curl -fsS "${{ inputs.api_url }}/health" && break; sleep 5; done
+      - name: Run k6
+        run: |
+          mkdir -p load/results
+          set +e
+          k6 run \
+            -e BASE="${{ inputs.api_url }}" \
+            -e RATES="${{ inputs.rates }}" \
+            -e WRITE_RATIO="${{ inputs.write_ratio }}" \
+            -e TARGET_P95="${{ inputs.target_p95 }}" \
+            --summary-export=load/results/mixed.json \
+            load/k6/genie-mixed-load.js 2>&1 | tee load/results/mixed.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo "## k6 load test"
+            echo "Target: ${{ inputs.api_url }}  Rates: ${{ inputs.rates }}  Write ratio: ${{ inputs.write_ratio }}  p95 target: ${{ inputs.target_p95 }} ms"
+            echo "k6 exit code: $code (0 = all thresholds met, 99 = a threshold was crossed, other = script or network error)"
+            echo '```'
+            grep -E "http_req_duration\{scenario|http_req_failed|checks|iterations" load/results/mixed.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != "0" ] && [ "$code" != "99" ]; then exit "$code"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results
+          path: load/results/
