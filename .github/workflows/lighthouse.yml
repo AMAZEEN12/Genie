@@ -1,0 +1,40 @@
+# Manual. Runs Lighthouse against the deployed Genie web app and keeps the reports as an artifact.
+name: Lighthouse
+on:
+  workflow_dispatch:
+    inputs:
+      web_url:
+        description: "Deployed web address (no trailing slash)"
+        required: true
+      api_url:
+        description: "API address including /api/v1"
+        required: true
+        default: "https://genie-t2s5.onrender.com/api/v1"
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Wake the API (Render free tier sleeps)
+        run: |
+          for i in $(seq 1 18); do curl -fsS "${{ inputs.api_url }}/health" && break; sleep 5; done
+      - name: Lighthouse CI
+        env:
+          WEB_URL: ${{ inputs.web_url }}
+          API_URL: ${{ inputs.api_url }}
+        run: npx --yes @lhci/cli@0.14.0 autorun --config=lighthouse/lighthouserc.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: web/lighthouse/results/
