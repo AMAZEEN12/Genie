@@ -6,12 +6,14 @@ import { RequestDetailPage } from '../features/requests/RequestDetailPage';
 import { ReceiptsPage } from '../features/receipts/ReceiptsPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { ErrorPage } from '../pages/ErrorPage';
 
 /** Feature pages from plan.md are registered here; route objects use React Router's Component API. */
 export const routes: RouteObject[] = [
   {
     path: '/',
     Component: AppLayout,
+    ErrorBoundary: ErrorPage,
     children: [
       { index: true, Component: HomePage },
       { path: 'requests', Component: RequestListPage },

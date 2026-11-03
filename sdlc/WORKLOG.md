@@ -6,37 +6,22 @@ Source document: `Tesa cohort 6 software engineering capstone project.pdf` (Geni
 > Any agent opening this project: read this file first, then the "Conventions and guidelines" and "Decisions" sections, then the artifacts in this folder. Continue from "Resume here". Don't re-ask anything already answered below.
 
 ## Resume here
-- **Stage:** Full-Stack Implementation Complete (Backend + Frontend), Role-Based Receipt Uploads with Cloudinary (R22-R30), added as addendums to `intent.md`, `plan.md`, `test-plan.md` and `EXECUTION.md` (DM20-DM21). Proposed by Victor Oyeleke / specification document; implemented, verified, and signed by Nnaemeka Chukwuma (Data and rules owner).
-- **Step:** Implemented and verified locally across backend and frontend on branch `feat/receipt-uploads` (from `origin/main` via `6a072de`):
-  1. **Backend Implementation (R22-R30):**
-     - Cloudinary Java SDK `cloudinary-http44:1.39.0`, private authenticated storage type in `genie/receipts/<orgId>`.
-     - Byte-level format verification (JPEG, PNG, WebP, PDF) and EXIF metadata stripping via `BufferedImage` / `ImageIO`.
-     - Multi-tenant scoping and role permissions: 404 for denied reads, self-approval blocked (403), finance reimbursement guard on approved receipts (409), rate limit 10/min (429).
-     - Streaming endpoint `GET /receipts/{id}/file` with signed Cloudinary URL and `Cache-Control: private, no-store`. Zero leakage of Cloudinary public IDs, URLs, or secrets.
-     - Flyway migration V6 and rollback script U6 (`receipt`, `receipt_audit_log`, `org_id`/`manager_id`).
-     - 13 backend integration tests in `ReceiptWorkflowIT` covering all Section 8 scenarios.
-  2. **Frontend Implementation (R22-R30):**
-     - Regenerated TypeScript schema from OpenAPI 0.3.0 (`npm run generate:api`).
-     - Strongly typed receipt models (`service/models/receipt.models.ts`) and endpoint builders (`service/endpoints/endpoints.ts`).
-     - HTTP client enhanced (`service/httpclient/client.ts`) for `FormData` multipart uploads and `apiBlobRequest` binary streaming.
-     - API client and mock persistence (`service/api/receipts.api.ts`, `api/receipts.ts`) with realistic seed data and localStorage persistence.
-     - TanStack React Query hooks (`hooks/useReceipts.ts`).
-     - `UploadReceiptModal.tsx` conforming to modern-web-guidance `dialog` (`<dialog>`, drag & drop, client-side format & 10MB size validation, thumbnail preview, duplicate upload prevention).
-     - `ReceiptViewModal.tsx` streaming private receipts securely without leaking Cloudinary URLs, displaying metadata, with direct actions (Approve/Reject, Reimburse, Delete, Save file).
-     - `ReceiptsPage.tsx` with role-aware views (Technician, Manager, Finance), responsive layout conforming to modern-web-guidance `responsive-table`, status filters, search, and CSV export.
-     - Navigation `/receipts` wired in `router.tsx` and `AppLayout.tsx`.
-     - 8 unit and integration tests in `ReceiptsPage.test.tsx` verifying upload validation, stream viewing, manager approval/rejection, finance reimbursement, and deletion.
+- **Stage:** Fix Verification Complete, Receipt Rendering Resilience (R31-R33). Diagnosed and resolved production error on `https://genie-sigma-two.vercel.app/receipts` (`TypeError: Cannot read properties of undefined (reading 'toLowerCase')`).
+- **Step:** Implemented and verified across frontend and backend on branch `fix/receipt-format-undefined` (from `origin/main` `e2837d2`):
+  1. `ReceiptsPage.tsx`: Safely derive `format` and `isPdf` from `receipt.format || receipt.originalName?.split('.').pop() || 'file'`; guard search filters with optional chaining.
+  2. `ReceiptViewModal.tsx`: Safely derive format without throwing on undefined.
+  3. `router.tsx`: Registered `ErrorPage.tsx` as `ErrorBoundary` on the root route.
+  4. `ReceiptResponse.java` & `openapi.yaml`: Exposed `format` and `resourceType` from `Receipt.java`.
+  5. `ReceiptsPage.test.tsx`: Added regression test proving receipts without `format` render safely without throwing.
 - **Checks:**
-  - service `./mvnw clean verify` gives **60 tests green, 0 failures, BUILD SUCCESS** (Docker, Postgres 17 Testcontainers, JaCoCo coverage rules met);
-  - web `npm test` gives **99 tests passed across 13 test files (0 failures)**;
-  - web `npm run lint` is clean (0 errors, 0 warnings);
-  - web `npm run typecheck` is clean (0 errors);
-  - web `npm run build` generates clean production assets in `dist/`;
-  - bundle audit: zero leakage of Cloudinary API keys, secrets, or URLs in production bundle;
-  - contract `contract/openapi.yaml` bumped to 0.3.0 and validated with `@redocly/cli lint`: **0 errors, valid**.
-- **Next action:** Commit frontend changes to `feat/receipt-uploads`, push branch, and open PR into `main` for team review.
-- **Waiting on:** Isaac Bassey (contract 0.3.0 and V6 migration review); Victor Oyeleke (screen review).
-- **Local notes:** Docker Desktop is running.
+  - Web `npm test` gives **100 tests passed across 13 test files (0 failures)**;
+  - Web `npm run lint` is clean (0 errors, 0 warnings);
+  - Web `npm run typecheck` is clean (0 errors);
+  - Web `npm run build` succeeds (`dist/` generated in 5.46s);
+  - Service `mvnw test-compile` passes (`BUILD SUCCESS`);
+  - Service `mvnw test -Dtest=*Test` passes (7/7 tests passed, `BUILD SUCCESS`);
+  - Contract lint `npx @redocly/cli lint contract/openapi.yaml` passes (valid).
+- **Next action:** Commit changes on `fix/receipt-format-undefined`, push to origin, and open PR.
 
 ## How to continue without the sdlc skill
 Same workflow as the Stockwise repository's `sdlc/WORKLOG.md` ("How to continue without the sdlc skill"). Genie follows the lighter "Side project standard" (brief page 14): no full load test, screen reader report, Core Web Vitals or five decision records; two decision records are required. Interface engineer Victor Oyeleke proposed it and confirms the MVP scope.

@@ -12,8 +12,8 @@ export interface ReceiptModel {
   managerId?: string | null;
   status: ReceiptStatus;
   originalName: string;
-  format: string;
-  resourceType: string;
+  format?: string | null;
+  resourceType?: string | null;
   bytes: number;
   createdAt: string;
   decidedBy?: string | null;

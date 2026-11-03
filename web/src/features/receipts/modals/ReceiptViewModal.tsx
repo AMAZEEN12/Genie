@@ -91,9 +91,14 @@ function ReceiptViewModalContent({
     }
   };
 
+  const fileFormat =
+    receipt.format?.toLowerCase() ||
+    receipt.originalName?.split('.').pop()?.toLowerCase() ||
+    'file';
+
   const isPdf =
-    receipt.format.toLowerCase() === 'pdf' ||
-    receipt.originalName.toLowerCase().endsWith('.pdf') ||
+    fileFormat === 'pdf' ||
+    Boolean(receipt.originalName?.toLowerCase().endsWith('.pdf')) ||
     receipt.resourceType === 'raw';
 
   const isOwnReceipt = Boolean(viewerUserId && receipt.uploadedBy === viewerUserId);
@@ -253,7 +258,7 @@ function ReceiptViewModalContent({
                 </div>
                 <div>
                   <span className="text-[#A8A8A8] block">Format</span>
-                  <span className="text-white uppercase font-mono">{receipt.format}</span>
+                  <span className="text-white uppercase font-mono">{fileFormat}</span>
                 </div>
                 <div>
                   <span className="text-[#A8A8A8] block">Uploaded On</span>
